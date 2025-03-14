@@ -19,20 +19,16 @@ contract EscrowTest is Test {
     uint256 public constant REQUEST_AMOUNT = 1 ether;
 
     function setUp() public {
-        // Setup accounts
         owner = address(this);
         user1 = makeAddr("user1");
         user2 = makeAddr("user2");
         winner1 = makeAddr("winner1");
         winner2 = makeAddr("winner2");
 
-        // Deploy the token first
         kaitoToken = new MockERC20("Kaito Token", "KTO", 18);
 
-        // Deploy escrow with token address
         escrow = new Escrow(address(kaitoToken));
 
-        // Mint tokens to users
         kaitoToken.mint(user1, INITIAL_BALANCE);
         kaitoToken.mint(user2, INITIAL_BALANCE);
     }
