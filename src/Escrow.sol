@@ -20,21 +20,9 @@ contract Escrow is ReentrancyGuard, Ownable {
         Individual
     }
 
-    struct CreateYapRequest {
-        RequesterType requesterType;
-        string twitterHandle;
-        string purpose;
-        string targetAudience;
-        uint256 budget;
-    }
-
     struct YapRequest {
         uint256 yapId;
         address creator;
-        RequesterType requesterType;
-        string twitterHandle;
-        string purpose;
-        string targetAudience;
         uint256 budget;
         bool isActive;
     }
@@ -61,28 +49,24 @@ contract Escrow is ReentrancyGuard, Ownable {
     }
 
     /**
-     * @notice Creates a new yap request with specified parameters
-     * @param _createyaprequest The request parameters
+     * @notice Creates a new yap request with specified a budget
+     * @param _budget The budget for the yap request
+     * @dev The budget must be greater than zero
+     * @return The ID of the new yap request
      */
-    function createRequest(CreateYapRequest calldata _createyaprequest) external nonReentrant {
-        if (_createyaprequest.budget == 0) {
+    function createRequest(uint256 _budget) external nonReentrant returns (uint256) {
+        if (_budget == 0) {
             revert BudgetMustBeGreaterThanZero();
         }
-        IERC20(kaitoTokenAddress).safeTransferFrom(msg.sender, address(this), _createyaprequest.budget);
+        IERC20(kaitoTokenAddress).safeTransferFrom(msg.sender, address(this), _budget);
 
         s_yapRequestCount += 1;
-        s_yapRequests[s_yapRequestCount] = YapRequest({
-            yapId: s_yapRequestCount,
-            creator: msg.sender,
-            requesterType: _createyaprequest.requesterType,
-            twitterHandle: _createyaprequest.twitterHandle,
-            purpose: _createyaprequest.purpose,
-            targetAudience: _createyaprequest.targetAudience,
-            budget: _createyaprequest.budget,
-            isActive: true
-        });
+        s_yapRequests[s_yapRequestCount] =
+            YapRequest({yapId: s_yapRequestCount, creator: msg.sender, budget: _budget, isActive: true});
 
-        emit YapRequestCreated(s_yapRequestCount, msg.sender, _createyaprequest.budget);
+        emit YapRequestCreated(s_yapRequestCount, msg.sender, _budget);
+
+        return s_yapRequestCount;
     }
 
     /**
