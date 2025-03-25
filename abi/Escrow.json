@@ -18,40 +18,19 @@
   {
     "inputs": [
       {
-        "components": [
-          {
-            "internalType": "enum Escrow.RequesterType",
-            "name": "requesterType",
-            "type": "uint8"
-          },
-          {
-            "internalType": "string",
-            "name": "twitterHandle",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "purpose",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "targetAudience",
-            "type": "string"
-          },
-          {
-            "internalType": "uint256",
-            "name": "budget",
-            "type": "uint256"
-          }
-        ],
-        "internalType": "struct Escrow.CreateYapRequest",
-        "name": "_createyaprequest",
-        "type": "tuple"
+        "internalType": "uint256",
+        "name": "_budget",
+        "type": "uint256"
       }
     ],
     "name": "createRequest",
-    "outputs": [],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -313,26 +292,6 @@
             "internalType": "address",
             "name": "creator",
             "type": "address"
-          },
-          {
-            "internalType": "enum Escrow.RequesterType",
-            "name": "requesterType",
-            "type": "uint8"
-          },
-          {
-            "internalType": "string",
-            "name": "twitterHandle",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "purpose",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "targetAudience",
-            "type": "string"
           },
           {
             "internalType": "uint256",
