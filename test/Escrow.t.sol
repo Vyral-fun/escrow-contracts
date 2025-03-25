@@ -16,7 +16,8 @@ contract EscrowTest is Test {
     address public winner2;
 
     uint256 public constant INITIAL_BALANCE = 100 ether;
-    uint256 public constant REQUEST_AMOUNT = 1 ether;
+    uint256 public constant REQUEST_AMOUNT = 10 ether;
+    uint256 public constant REWARD_AMOUNT = 1 ether;
 
     function setUp() public {
         owner = address(this);
@@ -66,18 +67,21 @@ contract EscrowTest is Test {
         uint256 winner2BalanceBefore = kaitoToken.balanceOf(winner2);
 
         address[] memory winners = new address[](2);
+        uint256[] memory winnersRewards = new uint256[](2);
         winners[0] = winner1;
         winners[1] = winner2;
+        winnersRewards[0] = REWARD_AMOUNT;
+        winnersRewards[1] = REWARD_AMOUNT;
 
         vm.startPrank(user1);
-        escrow.rewardYapWinners(1, winners);
+        escrow.rewardYapWinners(1, winners, winnersRewards);
         vm.stopPrank();
 
         uint256 winner1BalanceAfter = kaitoToken.balanceOf(winner1);
         uint256 winner2BalanceAfter = kaitoToken.balanceOf(winner2);
 
-        assertEq(winner1BalanceAfter - winner1BalanceBefore, REQUEST_AMOUNT / 2);
-        assertEq(winner2BalanceAfter - winner2BalanceBefore, REQUEST_AMOUNT / 2);
+        assertEq(winner1BalanceAfter - winner1BalanceBefore, REWARD_AMOUNT);
+        assertEq(winner2BalanceAfter - winner2BalanceBefore, REWARD_AMOUNT);
 
         vm.startPrank(user1);
         Escrow.YapRequest memory yapRequest = escrow.getYapRequest(1);
@@ -104,12 +108,15 @@ contract EscrowTest is Test {
         test_CreateERC20Request();
 
         address[] memory winners = new address[](2);
+        uint256[] memory winnersRewards = new uint256[](2);
         winners[0] = winner1;
         winners[1] = winner2;
+        winnersRewards[0] = REWARD_AMOUNT;
+        winnersRewards[1] = REWARD_AMOUNT;
 
         vm.startPrank(user2);
         vm.expectRevert(Escrow.OnlyCreatorCanDistributeRewards.selector);
-        escrow.rewardYapWinners(1, winners);
+        escrow.rewardYapWinners(1, winners, winnersRewards);
         vm.stopPrank();
     }
 
@@ -117,12 +124,15 @@ contract EscrowTest is Test {
         test_RewardYapWinnersERC20();
 
         address[] memory winners = new address[](2);
+        uint256[] memory winnersRewards = new uint256[](2);
         winners[0] = winner1;
         winners[1] = winner2;
+        winnersRewards[0] = REWARD_AMOUNT;
+        winnersRewards[1] = REWARD_AMOUNT;
 
         vm.startPrank(user1);
         vm.expectRevert(Escrow.YapRequestNotActive.selector);
-        escrow.rewardYapWinners(1, winners);
+        escrow.rewardYapWinners(1, winners, winnersRewards);
         vm.stopPrank();
     }
 
@@ -130,10 +140,11 @@ contract EscrowTest is Test {
         test_CreateERC20Request();
 
         address[] memory winners = new address[](0);
+        uint256[] memory winnersRewards = new uint256[](0);
 
         vm.startPrank(user1);
         vm.expectRevert(Escrow.NoWinnersProvided.selector);
-        escrow.rewardYapWinners(1, winners);
+        escrow.rewardYapWinners(1, winners, winnersRewards);
         vm.stopPrank();
     }
 }
