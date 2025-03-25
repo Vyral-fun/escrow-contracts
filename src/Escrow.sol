@@ -48,9 +48,11 @@ contract Escrow is ReentrancyGuard, Ownable {
     error YapRequestNotActive();
     error InvalidYapRequestId();
     error NoWinnersProvided();
+    error InvalidWinnersProvided();
     error TokenTransferFailed();
     error NativeTransferFailed();
     error InvalidERC20Address();
+    error InsufficientBudget();
     error OnlyCreatorCanDistributeRewards();
 
     constructor(address _kaitoAddress) Ownable(msg.sender) {
@@ -87,10 +89,20 @@ contract Escrow is ReentrancyGuard, Ownable {
      * @notice Distributes rewards to winners of a yap request
      * @param yapRequestId The ID of the yap request
      * @param winners Array of winner addresses
+     * @param winnersRewards Array of corresponding reward amounts for each winner
      */
-    function rewardYapWinners(uint256 yapRequestId, address[] calldata winners) external nonReentrant {
-        if (winners.length == 0) {
+    function rewardYapWinners(uint256 yapRequestId, address[] calldata winners, uint256[] calldata winnersRewards)
+        external
+        nonReentrant
+    {
+        uint256 winnerslength = winners.length;
+        uint256 winnersRewardsLength = winnersRewards.length;
+        if (winnerslength == 0 || winnersRewardsLength == 0) {
             revert NoWinnersProvided();
+        }
+
+        if (winnerslength != winnersRewardsLength) {
+            revert InvalidWinnersProvided();
         }
 
         YapRequest storage yapRequest = s_yapRequests[yapRequestId];
@@ -103,25 +115,27 @@ contract Escrow is ReentrancyGuard, Ownable {
             revert YapRequestNotActive();
         }
 
-        uint256 numOfWinners = winners.length;
-        uint256 reward = yapRequest.budget / numOfWinners;
-
         if (msg.sender != yapRequest.creator && msg.sender != owner()) {
             revert OnlyCreatorCanDistributeRewards();
         }
 
+        uint256 totalReward = 0;
+        for (uint256 i = 0; i < winnersRewardsLength; i++) {
+            totalReward += winnersRewards[i];
+        }
+
+        if (totalReward > yapRequest.budget) {
+            revert InsufficientBudget();
+        }
+
         yapRequest.isActive = false;
 
-        for (uint256 i = 0; i < numOfWinners; i++) {
-            IERC20(kaitoTokenAddress).safeTransfer(winners[i], reward);
-            // bool success = IERC20(yapRequest.tokenAddress).transfer(winners[i], reward);
-            // if (!success) {
-            //     revert TokenTransferFailed();
-            // }
+        for (uint256 i = 0; i < winnerslength; i++) {
+            IERC20(kaitoTokenAddress).safeTransfer(winners[i], winnersRewards[i]);
             s_yap_winners[yapRequestId].push(winners[i]);
         }
 
-        emit RewardsDistributed(yapRequestId, winners, reward);
+        emit RewardsDistributed(yapRequestId, winners, totalReward);
     }
 
     /**
