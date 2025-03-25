@@ -35,17 +35,11 @@ contract EscrowTest is Test {
     }
 
     function test_CreateERC20Request() public {
-        Escrow.CreateYapRequest memory request = Escrow.CreateYapRequest({
-            requesterType: Escrow.RequesterType.Individual,
-            twitterHandle: "testuser",
-            purpose: "Testing ERC20",
-            targetAudience: "Token Holders",
-            budget: REQUEST_AMOUNT
-        });
+        uint256 budget = REQUEST_AMOUNT;
 
         vm.startPrank(user1);
         kaitoToken.approve(address(escrow), REQUEST_AMOUNT);
-        escrow.createRequest(request);
+        escrow.createRequest(budget);
         vm.stopPrank();
 
         assertEq(escrow.getTotalYapRequests(), 1);
@@ -90,17 +84,11 @@ contract EscrowTest is Test {
     }
 
     function test_RevertWhen_ZeroBudget() public {
-        Escrow.CreateYapRequest memory request = Escrow.CreateYapRequest({
-            requesterType: Escrow.RequesterType.Project,
-            twitterHandle: "testproject",
-            purpose: "Testing",
-            targetAudience: "Developers",
-            budget: 0
-        });
+        uint256 budget = 0;
 
         vm.startPrank(user1);
         vm.expectRevert(Escrow.BudgetMustBeGreaterThanZero.selector);
-        escrow.createRequest(request);
+        escrow.createRequest(budget);
         vm.stopPrank();
     }
 
