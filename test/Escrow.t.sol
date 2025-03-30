@@ -21,6 +21,7 @@ contract EscrowTest is Test {
 
     function setUp() public {
         owner = address(this);
+        address[] memory admins;
         user1 = makeAddr("user1");
         user2 = makeAddr("user2");
         winner1 = makeAddr("winner1");
@@ -28,7 +29,7 @@ contract EscrowTest is Test {
 
         kaitoToken = new MockERC20("Kaito Token", "KTO", 18);
 
-        escrow = new Escrow(address(kaitoToken));
+        escrow = new Escrow(address(kaitoToken), admins);
 
         kaitoToken.mint(user1, INITIAL_BALANCE);
         kaitoToken.mint(user2, INITIAL_BALANCE);
@@ -67,9 +68,7 @@ contract EscrowTest is Test {
         winnersRewards[0] = REWARD_AMOUNT;
         winnersRewards[1] = REWARD_AMOUNT;
 
-        vm.startPrank(user1);
         escrow.rewardYapWinners(1, winners, winnersRewards);
-        vm.stopPrank();
 
         uint256 winner1BalanceAfter = kaitoToken.balanceOf(winner1);
         uint256 winner2BalanceAfter = kaitoToken.balanceOf(winner2);
@@ -92,7 +91,7 @@ contract EscrowTest is Test {
         vm.stopPrank();
     }
 
-    function test_RevertWhen_OnlyCreatorCanReward() public {
+    function test_RevertWhen_OnlyAdminsCanReward() public {
         test_CreateERC20Request();
 
         address[] memory winners = new address[](2);
@@ -102,8 +101,8 @@ contract EscrowTest is Test {
         winnersRewards[0] = REWARD_AMOUNT;
         winnersRewards[1] = REWARD_AMOUNT;
 
+        vm.expectRevert(Escrow.OnlyAdminsCanDistributeRewards.selector);
         vm.startPrank(user2);
-        vm.expectRevert(Escrow.OnlyCreatorCanDistributeRewards.selector);
         escrow.rewardYapWinners(1, winners, winnersRewards);
         vm.stopPrank();
     }
