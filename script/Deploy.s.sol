@@ -6,13 +6,14 @@ import {Escrow} from "../src/Escrow.sol";
 
 contract DeployScript is Script {
     Escrow public escrow;
+    address[] public admins = [0x47C14E2dD82B7Cf0E7426c991225417e4C40Cd19, 0x47C14E2dD82B7Cf0E7426c991225417e4C40Cd19];
 
     function setUp() public {}
 
     function run() public returns (Escrow) {
         vm.startBroadcast();
         address kaitoAddress = 0x47C14E2dD82B7Cf0E7426c991225417e4C40Cd19; // Change this
-        escrow = new Escrow(kaitoAddress);
+        escrow = new Escrow(kaitoAddress, admins);
 
         vm.stopBroadcast();
 
