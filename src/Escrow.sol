@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+pragma solidity 0.8.29;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -14,6 +14,7 @@ contract Escrow is ReentrancyGuard, Ownable {
     address public s_owner;
     mapping(uint256 => YapRequest) private s_yapRequests;
     mapping(uint256 => address[]) private s_yap_winners;
+    mapping(address => bool) private s_is_admin;
 
     enum RequesterType {
         Project,
@@ -41,11 +42,15 @@ contract Escrow is ReentrancyGuard, Ownable {
     error NativeTransferFailed();
     error InvalidERC20Address();
     error InsufficientBudget();
-    error OnlyCreatorCanDistributeRewards();
+    error OnlyAdminsCanDistributeRewards();
 
-    constructor(address _kaitoAddress) Ownable(msg.sender) {
-        s_owner = msg.sender;
+    constructor(address _kaitoAddress, address[] memory _admins) Ownable(msg.sender) {
+        s_is_admin[msg.sender] = true;
         kaitoTokenAddress = _kaitoAddress;
+
+        for (uint256 i = 0; i < _admins.length; i++) {
+            s_is_admin[_admins[i]] = true;
+        }
     }
 
     /**
@@ -58,6 +63,10 @@ contract Escrow is ReentrancyGuard, Ownable {
         if (_budget == 0) {
             revert BudgetMustBeGreaterThanZero();
         }
+        if (msg.sender == address(0)) {
+            revert InvalidYapRequestId();
+        }
+
         IERC20(kaitoTokenAddress).safeTransferFrom(msg.sender, address(this), _budget);
 
         s_yapRequestCount += 1;
@@ -89,7 +98,7 @@ contract Escrow is ReentrancyGuard, Ownable {
             revert InvalidWinnersProvided();
         }
 
-        YapRequest storage yapRequest = s_yapRequests[yapRequestId];
+        YapRequest memory yapRequest = s_yapRequests[yapRequestId];
 
         if (yapRequest.yapId == 0) {
             revert InvalidYapRequestId();
@@ -99,8 +108,8 @@ contract Escrow is ReentrancyGuard, Ownable {
             revert YapRequestNotActive();
         }
 
-        if (msg.sender != yapRequest.creator && msg.sender != owner()) {
-            revert OnlyCreatorCanDistributeRewards();
+        if (!s_is_admin[msg.sender]) {
+            revert OnlyAdminsCanDistributeRewards();
         }
 
         uint256 totalReward = 0;
@@ -112,11 +121,11 @@ contract Escrow is ReentrancyGuard, Ownable {
             revert InsufficientBudget();
         }
 
-        yapRequest.isActive = false;
+        s_yapRequests[yapRequestId].isActive = false;
 
         for (uint256 i = 0; i < winnerslength; i++) {
-            IERC20(kaitoTokenAddress).safeTransfer(winners[i], winnersRewards[i]);
             s_yap_winners[yapRequestId].push(winners[i]);
+            IERC20(kaitoTokenAddress).safeTransfer(winners[i], winnersRewards[i]);
         }
 
         emit RewardsDistributed(yapRequestId, winners, totalReward);
