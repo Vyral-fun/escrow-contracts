@@ -11,7 +11,6 @@ contract Escrow is ReentrancyGuard, Ownable {
 
     uint256 private s_yapRequestCount = 0;
     address private kaitoTokenAddress;
-    address public s_owner;
     mapping(uint256 => YapRequest) private s_yapRequests;
     mapping(uint256 => address[]) private s_yap_winners;
     mapping(address => bool) private s_is_admin;
@@ -158,5 +157,13 @@ contract Escrow is ReentrancyGuard, Ownable {
      */
     function getWinners(uint256 yapRequestId) external view returns (address[] memory) {
         return s_yap_winners[yapRequestId];
+    }
+
+    /**
+     * @notice Checks if an address is an admin
+     * @return bool indicating if the address is an admin
+     */
+    function isAdmin(address _address) external view returns (bool) {
+        return s_is_admin[_address];
     }
 }
