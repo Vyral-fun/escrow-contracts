@@ -18,8 +18,6 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
     mapping(uint256 => address[]) private s_yap_winners;
     mapping(address => bool) private s_is_admin;
     mapping(uint256 => mapping(address => ApprovedWinner)) private s_yapWinnersApprovals; // yapId => (winner => ApprovedWinner)
-    address private s_implementation;
-    address private s_owner;
 
     struct YapRequest {
         uint256 yapId;
@@ -38,7 +36,6 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
     event WinnerApproved(uint256 indexed yapId, address winner, uint256 amount);
     event Initialized(address kaitoAddress, address[] admins);
     event Claimed(uint256 indexed yapId, address winner, uint256 amount);
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     error FeeMustBeGreaterThanZero();
     error BudgetMustBeGreaterThanZero();
@@ -64,7 +61,9 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
         address[] memory _admins,
         uint256 _bufferTime,
         uint256 _currentYapRequestCount
-    ) external {
+    ) public initializer {
+        __Ownable_init(msg.sender);
+
         if (kaitoTokenAddress != address(0)) {
             revert AlreadyInitialized();
         }
@@ -73,7 +72,6 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
         s_rewardBufferTime = _bufferTime * 1 days;
         s_is_admin[msg.sender] = true;
         s_feeBalance = 0;
-        s_owner = msg.sender;
         kaitoTokenAddress = _kaitoAddress;
 
         for (uint256 i = 0; i < _admins.length; i++) {
@@ -205,6 +203,14 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
     }
 
     /**
+     * @notice Resets the token address yap reward
+     * @param _newTokenAddress The new token address
+     */
+    function resetKaitoAddress(address _newTokenAddress) external onlyOwner {
+        kaitoTokenAddress = _newTokenAddress;
+    }
+
+    /**
      * @notice Gets the current buffer time
      * @return The current buffer time in seconds
      */
@@ -247,6 +253,14 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
      */
     function getWinners(uint256 yapRequestId) external view returns (address[] memory) {
         return s_yap_winners[yapRequestId];
+    }
+
+    /**
+     * @notice Gets the address of the Kaito token
+     * @return The address of the Kaito token
+     */
+    function getKaitoAddress() external view returns (address) {
+        return kaitoTokenAddress;
     }
 
     /**
