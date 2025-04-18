@@ -2,21 +2,32 @@
 pragma solidity ^0.8.13;
 
 import {Script, console} from "forge-std/Script.sol";
-import {Escrow} from "../src/Escrow.sol";
+import {EscrowLogic} from "../src/EscrowLogic.sol";
+import {EscrowProxy} from "../src/EscrowProxy.sol";
 
 contract DeployScript is Script {
-    Escrow public escrow;
-    address[] public admins = [0x47C14E2dD82B7Cf0E7426c991225417e4C40Cd19, 0x47C14E2dD82B7Cf0E7426c991225417e4C40Cd19];
+    EscrowLogic public escrowLogic;
+    EscrowProxy public escrowProxy;
 
     function setUp() public {}
 
-    function run() public returns (Escrow) {
+    function run() public returns (EscrowProxy) {
         vm.startBroadcast();
+
         address kaitoAddress = 0x47C14E2dD82B7Cf0E7426c991225417e4C40Cd19; // Change this
-        escrow = new Escrow(kaitoAddress, admins);
+        address[] memory admins = new address[](2);
+        admins[0] = 0x47C14E2dD82B7Cf0E7426c991225417e4C40Cd19;
+        admins[1] = 0x47C14E2dD82B7Cf0E7426c991225417e4C40Cd19;
+
+        escrowLogic = new EscrowLogic();
+
+        escrowProxy = new EscrowProxy(address(escrowLogic), kaitoAddress, admins, 1, 0);
+
+        console.log("EscrowLogic deployed at:", address(escrowLogic));
+        console.log("EscrowProxy deployed at:", address(escrowProxy));
 
         vm.stopBroadcast();
 
-        return escrow;
+        return escrowProxy;
     }
 }
