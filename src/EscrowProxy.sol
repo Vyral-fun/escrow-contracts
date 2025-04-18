@@ -3,36 +3,22 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+/**
+ * @title EscrowProxy
+ * @dev This contract works as a proxy that delegates calls to an implementation contract.
+ * Only the implementation address and proxy owner are stored here.
+ */
 contract EscrowProxy is Ownable {
-    uint256 private s_yapRequestCount;
-    uint256 private s_rewardBufferTime;
-    uint256 private s_feeBalance;
-    address private kaitoTokenAddress;
-    mapping(uint256 => YapRequest) private s_yapRequests;
-    mapping(uint256 => address[]) private s_yap_winners;
-    mapping(address => bool) private s_is_admin;
-    mapping(uint256 => mapping(address => ApprovedWinner)) private s_yapWinnersApprovals;
-    address private s_implementation;
-    address private s_owner;
+    // keccak256("eip1967.proxy.implementation") - 1 = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc
+    bytes32 internal constant IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 
-    struct YapRequest {
-        uint256 yapId;
-        address creator;
-        uint256 budget;
-        bool isActive;
-    }
-
-    struct ApprovedWinner {
-        address winner;
-        uint256 amount;
-        uint256 approvalTime;
-    }
+    uint256[100] private __gap;
 
     event Upgraded(address indexed implementation);
 
     error ImplementationRequired();
-    error NotOwner();
     error InitializationFailed();
+    error NotOwner();
 
     constructor(
         address _implementation,
@@ -44,8 +30,9 @@ contract EscrowProxy is Ownable {
         if (_implementation == address(0)) {
             revert ImplementationRequired();
         }
-        s_implementation = _implementation;
-        s_owner = msg.sender;
+        assembly {
+            sstore(IMPLEMENTATION_SLOT, _implementation)
+        }
 
         (bool success,) = _implementation.delegatecall(
             abi.encodeWithSignature(
@@ -63,28 +50,36 @@ contract EscrowProxy is Ownable {
     }
 
     function upgradeTo(address _newImplementation) external {
-        if (msg.sender != s_owner) {
+        if (msg.sender != owner()) {
             revert NotOwner();
         }
         if (_newImplementation == address(0)) {
             revert ImplementationRequired();
         }
-        s_implementation = _newImplementation;
+        assembly {
+            sstore(IMPLEMENTATION_SLOT, _newImplementation)
+        }
         emit Upgraded(_newImplementation);
     }
 
+    function _implementation() internal view returns (address impl) {
+        assembly {
+            impl := sload(IMPLEMENTATION_SLOT)
+        }
+    }
+
     function get_implementation() external view returns (address) {
-        return s_implementation;
+        return _implementation();
     }
 
     fallback() external payable {
-        address implementation = s_implementation;
+        _delegate(_implementation());
+    }
 
+    function _delegate(address impl) internal {
         assembly {
             calldatacopy(0, 0, calldatasize())
-
-            let result := delegatecall(gas(), implementation, 0, calldatasize(), 0, 0)
-
+            let result := delegatecall(gas(), impl, 0, calldatasize(), 0, 0)
             returndatacopy(0, 0, returndatasize())
 
             switch result
@@ -93,5 +88,7 @@ contract EscrowProxy is Ownable {
         }
     }
 
-    receive() external payable {}
+    receive() external payable {
+        _delegate(_implementation());
+    }
 }
