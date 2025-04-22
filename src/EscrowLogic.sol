@@ -6,18 +6,31 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@uniswap/v2-periphery/interfaces/IUniswapV2Router02.sol";
+import "@uniswap/v2-core/interfaces/IUniswapV2Factory.sol";
 
 contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
+    address private constant BASE_UNISWAP_V2_FACTORY = 0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6;
+    address private constant BASE_UNISWAP_V2_ROUTER = 0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24;
     uint256 private s_yapRequestCount;
+    uint256 private s_feePercentage;
     uint256 private s_rewardBufferTime;
     uint256 private s_feeBalance;
     address private kaitoTokenAddress;
+    address private usdcTokenAddress;
+    address private usdtTokenAddress;
     mapping(uint256 => YapRequest) private s_yapRequests;
     mapping(uint256 => address[]) private s_yap_winners;
     mapping(address => bool) private s_is_admin;
     mapping(uint256 => mapping(address => ApprovedWinner)) private s_yapWinnersApprovals; // yapId => (winner => ApprovedWinner)
+
+    enum YapTokenType {
+        Kaito,
+        USDC,
+        USDT
+    }
 
     struct YapRequest {
         uint256 yapId;
@@ -38,6 +51,7 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
     event Claimed(uint256 indexed yapId, address winner, uint256 amount);
 
     error FeeMustBeGreaterThanZero();
+    error InvalidFeePercentage();
     error BudgetMustBeGreaterThanZero();
     error CannotClaimYet();
     error WinnerAlreadyApproved();
@@ -57,6 +71,8 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
     error NotOwner();
 
     function initialize(
+        address _usdcTokenAddress,
+        address _usdtTokenAddress,
         address _kaitoAddress,
         address[] memory _admins,
         uint256 _bufferTime,
@@ -73,6 +89,8 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
         s_is_admin[msg.sender] = true;
         s_feeBalance = 0;
         kaitoTokenAddress = _kaitoAddress;
+        usdcTokenAddress = _usdcTokenAddress;
+        usdtTokenAddress = _usdtTokenAddress;
 
         for (uint256 i = 0; i < _admins.length; i++) {
             s_is_admin[_admins[i]] = true;
@@ -90,7 +108,7 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
      * @dev The budget must be greater than zero
      * @return The ID of the new yap request
      */
-    function createRequest(uint256 _budget, uint256 _fee) external returns (uint256) {
+    function createRequest(uint256 _budget, uint256 _fee, YapTokenType paymentToken) external returns (uint256) {
         if (_budget == 0) {
             revert BudgetMustBeGreaterThanZero();
         }
@@ -98,15 +116,50 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
             revert FeeMustBeGreaterThanZero();
         }
 
+        uint256 exactBudget;
         uint256 totalBudget = _budget + _fee;
-        IERC20(kaitoTokenAddress).safeTransferFrom(msg.sender, address(this), totalBudget);
-        s_feeBalance += _fee;
+
+        if (paymentToken == YapTokenType.Kaito) {
+            IERC20(kaitoTokenAddress).safeTransferFrom(msg.sender, address(this), totalBudget);
+            s_feeBalance += _fee;
+            exactBudget = _budget;
+        } else {
+            address stableToken = paymentToken == YapTokenType.USDC ? usdcTokenAddress : usdtTokenAddress;
+            if (stableToken == address(0)) {
+                revert InvalidERC20Address();
+            }
+            IERC20(stableToken).safeTransferFrom(msg.sender, address(this), totalBudget);
+            IERC20(stableToken).safeApprove(address(BASE_UNISWAP_V2_ROUTER), totalBudget);
+
+            address[] memory path = new address[](2);
+            path[0] = stableToken;
+            path[1] = kaitoAddress;
+
+            uint256[] memory expectedAmounts = uniswapRouter.getAmountsOut(totalBudget, swapPath);
+            uint256 expectedKaitoAmount = expectedAmounts[1];
+            uint256 minKaitoAmount = (expectedKaitoAmount * 995) / 1000; // 0.5% slippage
+
+            uint256[] memory amounts = uniswapRouter.swapExactTokensForTokens(
+                totalBudget,
+                minKaitoAmount,
+                path,
+                address(this),
+                block.timestamp + 300 // 5 minutes
+            );
+
+            uint256 receivedKaito = amounts[amounts.length - 1];
+
+            uint256 fee = (receivedKaito * s_feePercentage) / 100;
+
+            s_feeBalance += fee;
+            exactBudget = receivedKaito - fee;
+        }
 
         s_yapRequestCount += 1;
         s_yapRequests[s_yapRequestCount] =
-            YapRequest({yapId: s_yapRequestCount, creator: msg.sender, budget: _budget, isActive: true});
+            YapRequest({yapId: s_yapRequestCount, creator: msg.sender, budget: exactBudget, isActive: true});
 
-        emit YapRequestCreated(s_yapRequestCount, msg.sender, _budget);
+        emit YapRequestCreated(s_yapRequestCount, msg.sender, exactBudget);
 
         return s_yapRequestCount;
     }
@@ -192,6 +245,17 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
         }
         s_feeBalance -= amount;
         IERC20(kaitoTokenAddress).safeTransfer(to, amount);
+
+        uint256 usdcBalance = IERC20(usdcTokenAddress).balanceOf(address(this));
+        uint256 usdtBalance = IERC20(usdtTokenAddress).balanceOf(address(this));
+
+        if (usdcBalance > 0) {
+            IERC20(usdcTokenAddress).safeTransfer(to, usdcBalance);
+        }
+
+        if (usdtBalance > 0) {
+            IERC20(usdtTokenAddress).safeTransfer(to, usdtBalance);
+        }
     }
 
     /**
@@ -200,6 +264,22 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
      */
     function resetBufferTime(uint256 newBufferTime) external onlyAdmin {
         s_rewardBufferTime = newBufferTime;
+    }
+
+    /**
+     * @notice Sets the fee for yap creation
+     * @param newFeePercentage The new fee percentage
+     */
+    function resetFeePercentage(uint256 newFeePercentage) external onlyAdmin {
+        if (newFeePercentage == 0) {
+            revert FeeMustBeGreaterThanZero();
+        }
+
+        if (newFeePercentage > 100) {
+            revert InvalidFeePercentage();
+        }
+
+        s_feePercentage = newFeePercentage;
     }
 
     /**
@@ -261,6 +341,17 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
      */
     function getKaitoAddress() external view returns (address) {
         return kaitoTokenAddress;
+    }
+
+    /**
+     * @notice Gets the address of the pair
+     * @param tokenAddress The address of the stable token
+     * @return The address of the pair
+     */
+    function getPairDetails(address tokenAddress) external view returns (address) {
+        IUniswapV2Factory factory = IUniswapV2Factory(BASE_UNISWAP_V2_FACTORY);
+        address pairAddress = factory.getPair(tokenAddress, kaitoTokenAddress);
+        return pairAddress;
     }
 
     /**
