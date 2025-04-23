@@ -133,7 +133,7 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
 
             address[] memory path = new address[](2);
             path[0] = stableToken;
-            path[1] = kaitoAddress;
+            path[1] = kaitoTokenAddress;
 
             uint256[] memory expectedAmounts = uniswapRouter.getAmountsOut(totalBudget, swapPath);
             uint256 expectedKaitoAmount = expectedAmounts[1];
