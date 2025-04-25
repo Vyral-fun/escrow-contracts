@@ -21,25 +21,31 @@ contract EscrowProxy is Ownable {
     error NotOwner();
 
     constructor(
-        address _implementation,
+        address _logicImplementation,
         address _kaitoAddress,
+        address _usdtAddress,
+        address _usdcAddress,
+        address _uniswapFactory,
+        address _uniswapRouter,
         address[] memory _admins,
-        uint256 _bufferTime,
         uint256 _currentYapRequestCount
     ) Ownable(msg.sender) {
-        if (_implementation == address(0)) {
+        if (_logicImplementation == address(0)) {
             revert ImplementationRequired();
         }
         assembly {
-            sstore(IMPLEMENTATION_SLOT, _implementation)
+            sstore(IMPLEMENTATION_SLOT, _logicImplementation)
         }
 
-        (bool success,) = _implementation.delegatecall(
+        (bool success,) = _logicImplementation.delegatecall(
             abi.encodeWithSignature(
-                "initialize(address,address[],uint256,uint256)",
+                "initialize(address,address,address,address,address,address[],uint256)",
+                _usdcAddress,
+                _usdtAddress,
                 _kaitoAddress,
+                _uniswapFactory,
+                _uniswapRouter,
                 _admins,
-                _bufferTime,
                 _currentYapRequestCount
             )
         );
