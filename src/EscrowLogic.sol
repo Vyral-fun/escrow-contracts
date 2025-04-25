@@ -12,11 +12,9 @@ import "@uniswap/v2-core/interfaces/IUniswapV2Factory.sol";
 contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    address private constant BASE_UNISWAP_V2_FACTORY = 0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6;
-    address private constant BASE_UNISWAP_V2_ROUTER = 0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24;
+    address private BASE_UNISWAP_V2_FACTORY;
+    address private BASE_UNISWAP_V2_ROUTER;
     uint256 private s_yapRequestCount;
-    uint256 private s_feePercentage;
-    uint256 private s_rewardBufferTime;
     uint256 private s_feeBalance;
     address private kaitoTokenAddress;
     address private usdcTokenAddress;
@@ -49,7 +47,10 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
     event WinnerApproved(uint256 indexed yapId, address winner, uint256 amount);
     event Initialized(address kaitoAddress, address[] admins);
     event Claimed(uint256 indexed yapId, address winner, uint256 amount);
+    event RewardsDistributed(uint256 indexed yapRequestId, address[] winners, uint256 totalReward);
 
+    error OnlyAdminsCanDistributeRewards();
+    error NoWinnersProvided();
     error FeeMustBeGreaterThanZero();
     error InvalidFeePercentage();
     error BudgetMustBeGreaterThanZero();
@@ -74,8 +75,9 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
         address _usdcTokenAddress,
         address _usdtTokenAddress,
         address _kaitoAddress,
+        address _uniswapFactory,
+        address _uniswapRouter,
         address[] memory _admins,
-        uint256 _bufferTime,
         uint256 _currentYapRequestCount
     ) public initializer {
         __Ownable_init(msg.sender);
@@ -85,12 +87,13 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
         }
 
         s_yapRequestCount = _currentYapRequestCount;
-        s_rewardBufferTime = _bufferTime * 1 days;
         s_is_admin[msg.sender] = true;
         s_feeBalance = 0;
         kaitoTokenAddress = _kaitoAddress;
         usdcTokenAddress = _usdcTokenAddress;
         usdtTokenAddress = _usdtTokenAddress;
+        BASE_UNISWAP_V2_FACTORY = _uniswapFactory;
+        BASE_UNISWAP_V2_ROUTER = _uniswapRouter;
 
         for (uint256 i = 0; i < _admins.length; i++) {
             s_is_admin[_admins[i]] = true;
@@ -103,44 +106,49 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
     /**
      * @notice Creates a new yap request with specified a budget
      * @param _budget The budget for the yap request
-     * @param _fee The fee for the yap request
+     * @param _feePercentage The percentage for fee from the yap budget
      * @dev The fee must be greater than zero
      * @dev The budget must be greater than zero
      * @return The ID of the new yap request
      */
-    function createRequest(uint256 _budget, uint256 _fee, YapTokenType paymentToken) external returns (uint256) {
+    function createRequest(uint256 _budget, uint256 _feePercentage, YapTokenType paymentToken)
+        external
+        returns (uint256, uint256)
+    {
         if (_budget == 0) {
             revert BudgetMustBeGreaterThanZero();
         }
-        if (_fee == 0) {
+        if (_feePercentage == 0) {
             revert FeeMustBeGreaterThanZero();
         }
 
         uint256 exactBudget;
-        uint256 totalBudget = _budget + _fee;
 
         if (paymentToken == YapTokenType.Kaito) {
-            IERC20(kaitoTokenAddress).safeTransferFrom(msg.sender, address(this), totalBudget);
+            IERC20(kaitoTokenAddress).safeTransferFrom(msg.sender, address(this), _budget);
+
+            (uint256 _exactBudget, uint256 _fee) = calculateFee(_budget, _feePercentage);
             s_feeBalance += _fee;
-            exactBudget = _budget;
+            exactBudget = _exactBudget;
         } else {
             address stableToken = paymentToken == YapTokenType.USDC ? usdcTokenAddress : usdtTokenAddress;
             if (stableToken == address(0)) {
                 revert InvalidERC20Address();
             }
-            IERC20(stableToken).safeTransferFrom(msg.sender, address(this), totalBudget);
-            IERC20(stableToken).safeApprove(address(BASE_UNISWAP_V2_ROUTER), totalBudget);
+            IERC20(stableToken).safeTransferFrom(msg.sender, address(this), _budget);
+            IERC20(stableToken).approve(address(BASE_UNISWAP_V2_ROUTER), _budget);
 
             address[] memory path = new address[](2);
+            IUniswapV2Router02 uniswapRouter = IUniswapV2Router02(BASE_UNISWAP_V2_ROUTER);
             path[0] = stableToken;
             path[1] = kaitoTokenAddress;
 
-            uint256[] memory expectedAmounts = uniswapRouter.getAmountsOut(totalBudget, swapPath);
+            uint256[] memory expectedAmounts = uniswapRouter.getAmountsOut(_budget, path);
             uint256 expectedKaitoAmount = expectedAmounts[1];
             uint256 minKaitoAmount = (expectedKaitoAmount * 995) / 1000; // 0.5% slippage
 
             uint256[] memory amounts = uniswapRouter.swapExactTokensForTokens(
-                totalBudget,
+                _budget,
                 minKaitoAmount,
                 path,
                 address(this),
@@ -149,10 +157,10 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
 
             uint256 receivedKaito = amounts[amounts.length - 1];
 
-            uint256 fee = (receivedKaito * s_feePercentage) / 100;
+            (uint256 _exactBudget, uint256 _fee) = calculateFee(receivedKaito, _feePercentage);
 
-            s_feeBalance += fee;
-            exactBudget = receivedKaito - fee;
+            s_feeBalance += _fee;
+            exactBudget = _exactBudget;
         }
 
         s_yapRequestCount += 1;
@@ -161,77 +169,64 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
 
         emit YapRequestCreated(s_yapRequestCount, msg.sender, exactBudget);
 
-        return s_yapRequestCount;
+        return (s_yapRequestCount, exactBudget);
     }
 
     /**
-     * @notice Approves a winner for a yap request
+     * @notice Distributes rewards to winners of a yap request
      * @param yapRequestId The ID of the yap request
-     * @param winner The address of the winner
-     * @param amount The amount to be rewarded to the winner
-     * @dev The budget must be greater than zero
-     * @dev The winner must be a valid address
-     * @dev The amount must be greater than zero
-     * @dev The yap request must be active
+     * @param winners Array of winner addresses
+     * @param winnersRewards Array of corresponding reward amounts for each winner
      */
-    function approveYapWinner(uint256 yapRequestId, address winner, uint256 amount) external onlyAdmin {
+    function rewardYapWinners(uint256 yapRequestId, address[] calldata winners, uint256[] calldata winnersRewards)
+        external
+        nonReentrant
+    {
+        if (!s_is_admin[msg.sender]) {
+            revert OnlyAdminsCanDistributeRewards();
+        }
+
+        uint256 winnerslength = winners.length;
+        uint256 winnersRewardsLength = winnersRewards.length;
+        if (winnerslength == 0 || winnersRewardsLength == 0) {
+            revert NoWinnersProvided();
+        }
+
+        if (winnerslength != winnersRewardsLength) {
+            revert InvalidWinnersProvided();
+        }
+
         YapRequest memory yapRequest = s_yapRequests[yapRequestId];
 
-        if (yapRequest.budget == 0 && yapRequest.isActive) {
-            s_yapRequests[yapRequestId].isActive = false;
-            revert InsufficientBudget();
-        }
-
-        if (s_yapWinnersApprovals[yapRequestId][winner].approvalTime > 0) {
-            revert WinnerAlreadyApproved();
-        }
-
-        if (winner == address(0)) {
-            revert NoValidWinnerProvided();
-        }
-
-        if (amount == 0) {
-            revert BudgetMustBeGreaterThanZero();
+        if (yapRequest.yapId == 0) {
+            revert InvalidYapRequestId();
         }
 
         if (!yapRequest.isActive) {
             revert YapRequestNotActive();
         }
 
-        if (yapRequest.budget < amount) {
+        uint256 totalReward = 0;
+        for (uint256 i = 0; i < winnersRewardsLength; i++) {
+            totalReward += winnersRewards[i];
+        }
+
+        if (totalReward > yapRequest.budget) {
             revert InsufficientBudget();
         }
 
-        s_yapRequests[yapRequestId].budget -= amount;
+        s_yapRequests[yapRequestId].budget -= totalReward;
 
         if (s_yapRequests[yapRequestId].budget == 0) {
             s_yapRequests[yapRequestId].isActive = false;
         }
-        s_yapWinnersApprovals[yapRequestId][winner] =
-            ApprovedWinner({winner: winner, amount: amount, approvalTime: block.timestamp});
-        s_yap_winners[yapRequestId].push(winner);
 
-        emit WinnerApproved(yapRequestId, winner, amount);
-    }
-
-    function claimYapWinners(uint256 yapRequestId) external nonReentrant {
-        ApprovedWinner memory approvedWinner = s_yapWinnersApprovals[yapRequestId][msg.sender];
-
-        if (block.timestamp < approvedWinner.approvalTime + s_rewardBufferTime) {
-            revert CannotClaimYet();
+        for (uint256 i = 0; i < winnerslength; i++) {
+            s_yap_winners[yapRequestId].push(winners[i]);
+            IERC20(kaitoTokenAddress).safeTransfer(winners[i], winnersRewards[i]);
         }
 
-        if (approvedWinner.winner == address(0)) {
-            revert NotAValidApproval();
-        }
-
-        uint256 amount = approvedWinner.amount;
-        s_yapWinnersApprovals[yapRequestId][msg.sender].amount = 0;
-        s_yapWinnersApprovals[yapRequestId][msg.sender].winner = address(0);
-
-        IERC20(kaitoTokenAddress).safeTransfer(msg.sender, amount);
-
-        emit Claimed(yapRequestId, msg.sender, amount);
+        emit RewardsDistributed(yapRequestId, winners, totalReward);
     }
 
     /**
@@ -259,30 +254,6 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
     }
 
     /**
-     * @notice Sets the buffer time for claiming rewards
-     * @param newBufferTime The new buffer time in seconds
-     */
-    function resetBufferTime(uint256 newBufferTime) external onlyAdmin {
-        s_rewardBufferTime = newBufferTime;
-    }
-
-    /**
-     * @notice Sets the fee for yap creation
-     * @param newFeePercentage The new fee percentage
-     */
-    function resetFeePercentage(uint256 newFeePercentage) external onlyAdmin {
-        if (newFeePercentage == 0) {
-            revert FeeMustBeGreaterThanZero();
-        }
-
-        if (newFeePercentage > 100) {
-            revert InvalidFeePercentage();
-        }
-
-        s_feePercentage = newFeePercentage;
-    }
-
-    /**
      * @notice Resets the token address yap reward
      * @param _newTokenAddress The new token address
      */
@@ -291,19 +262,13 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
     }
 
     /**
-     * @notice Gets the current buffer time
-     * @return The current buffer time in seconds
-     */
-    function getBufferTime() external view returns (uint256) {
-        return s_rewardBufferTime;
-    }
-
-    /**
      * @notice Gets the fee balance
      * @return The current fee balance
      */
-    function getFeeBalance() external view returns (uint256) {
-        return s_feeBalance;
+    function getFeeBalance() external view returns (uint256, uint256, uint256) {
+        uint256 usdcBalance = IERC20(usdcTokenAddress).balanceOf(address(this));
+        uint256 usdtBalance = IERC20(usdtTokenAddress).balanceOf(address(this));
+        return (s_feeBalance, usdtBalance, usdcBalance);
     }
 
     /**
@@ -368,6 +333,21 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
      */
     function addAdmin(address _admin) external onlyOwner {
         s_is_admin[_admin] = true;
+    }
+
+    function calculateFee(uint256 _budget, uint256 _feePercentage) internal pure returns (uint256, uint256) {
+        if (_feePercentage == 0) {
+            revert FeeMustBeGreaterThanZero();
+        }
+        if (_feePercentage > 100) {
+            revert InvalidFeePercentage();
+        }
+        if (_budget == 0) {
+            revert BudgetMustBeGreaterThanZero();
+        }
+        uint256 fee = (_budget * _feePercentage) / 100;
+        uint256 exactBudget = _budget - fee;
+        return (exactBudget, fee);
     }
 
     /**
