@@ -55,7 +55,7 @@ contract EscrowProxyTest is Test {
 
         kaitoToken.mint(user1, INITIAL_BALANCE);
         kaitoToken.mint(user2, INITIAL_BALANCE);
-        kaitoToken.mint(address(mockRouter), INITIAL_BALANCE * 100); 
+        kaitoToken.mint(address(mockRouter), INITIAL_BALANCE * 100);
 
         usdcToken.mint(user1, INITIAL_BALANCE);
         usdcToken.mint(user2, INITIAL_BALANCE);
@@ -310,7 +310,7 @@ contract EscrowProxyTest is Test {
         escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE_PERCENTAGE, EscrowLogic.YapTokenType.Kaito);
         vm.stopPrank();
 
-]        assertEq(escrowProxyAsLogic.getTotalYapRequests(), 2);
+        assertEq(escrowProxyAsLogic.getTotalYapRequests(), 2);
     }
 
     function testCloseYapRequestWithFullRewards() public {
