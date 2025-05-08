@@ -106,7 +106,7 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
     /**
      * @notice Creates a new yap request with specified a budget
      * @param _budget The budget for the yap request
-     * @param _feePercentage The percentage for fee from the yap budget
+     * @param _feePercentage The percentage for fee from the yap budget (1% = 1000, 0.75% = 750)
      * @dev The fee must be greater than zero
      * @dev The budget must be greater than zero
      * @return The ID of the new yap request
@@ -258,7 +258,32 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
      * @param _newTokenAddress The new token address
      */
     function resetKaitoAddress(address _newTokenAddress) external onlyOwner {
+        if (_newTokenAddress == address(0)) {
+            revert InvalidERC20Address();
+        }
         kaitoTokenAddress = _newTokenAddress;
+    }
+
+    /**
+     * @notice Resets the usdt token address
+     * @param usdt The new token address
+     */
+    function resetUsdtAddress(address usdt) public onlyOwner {
+        if (usdt == address(0)) {
+            revert InvalidERC20Address();
+        }
+        usdtTokenAddress = usdt;
+    }
+
+    /**
+     * @notice Resets the usdc token address
+     * @param usdc The new token address
+     */
+    function resetUsdcAddress(address usdc) public onlyOwner {
+        if (usdc == address(0)) {
+            revert InvalidERC20Address();
+        }
+        usdcTokenAddress = usdc;
     }
 
     /**
@@ -309,6 +334,22 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
     }
 
     /**
+     * @notice Gets the address of the Usdt token
+     * @return The address of the Usdt token
+     */
+    function getUsdtAddress() external view returns (address) {
+        return usdtTokenAddress;
+    }
+
+    /**
+     * @notice Gets the address of the Usdc token
+     * @return The address of the Usdc token
+     */
+    function getUsdcAddress() external view returns (address) {
+        return usdcTokenAddress;
+    }
+
+    /**
      * @notice Gets the address of the pair
      * @param tokenAddress The address of the stable token
      * @return The address of the pair
@@ -345,7 +386,7 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
         if (_budget == 0) {
             revert BudgetMustBeGreaterThanZero();
         }
-        uint256 fee = (_budget * _feePercentage) / 100;
+        uint256 fee = (_budget * _feePercentage) / 100000;
         uint256 exactBudget = _budget - fee;
         return (exactBudget, fee);
     }
