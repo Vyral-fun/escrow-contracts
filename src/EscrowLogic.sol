@@ -380,9 +380,6 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
         if (_feePercentage == 0) {
             revert FeeMustBeGreaterThanZero();
         }
-        if (_feePercentage > 100) {
-            revert InvalidFeePercentage();
-        }
         if (_budget == 0) {
             revert BudgetMustBeGreaterThanZero();
         }
