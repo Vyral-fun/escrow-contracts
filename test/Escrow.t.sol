@@ -28,7 +28,7 @@ contract EscrowProxyTest is Test {
 
     uint256 public constant INITIAL_BALANCE = 1000 ether;
     uint256 public constant REQUEST_BUDGET = 10 ether;
-    uint256 public constant FEE_PERCENTAGE = 10; // 10%
+    uint256 public constant FEE_PERCENTAGE = 10000; // 10%
     uint256 public constant REWARD_AMOUNT = 2 ether;
 
     event YapRequestCreated(uint256 indexed yapId, address indexed creator, uint256 budget);
