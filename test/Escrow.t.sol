@@ -98,7 +98,7 @@ contract EscrowProxyTest is Test {
         vm.expectEmit(true, true, false, true);
         emit YapRequestCreated(1, user1, 9 ether);
 
-        (uint256 yapId, uint256 exactBudget) =
+        (uint256 yapId, uint256 exactBudget,) =
             escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE_PERCENTAGE, EscrowLogic.YapTokenType.Kaito);
 
         vm.stopPrank();
@@ -121,7 +121,7 @@ contract EscrowProxyTest is Test {
 
         usdcToken.approve(address(escrowProxy), REQUEST_BUDGET);
 
-        (uint256 yapId, uint256 exactBudget) =
+        (uint256 yapId, uint256 exactBudget,) =
             escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE_PERCENTAGE, EscrowLogic.YapTokenType.USDC);
 
         vm.stopPrank();
@@ -143,7 +143,7 @@ contract EscrowProxyTest is Test {
 
         usdtToken.approve(address(escrowProxy), REQUEST_BUDGET);
 
-        (uint256 yapId, uint256 exactBudget) =
+        (uint256 yapId, uint256 exactBudget,) =
             escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE_PERCENTAGE, EscrowLogic.YapTokenType.USDT);
 
         vm.stopPrank();
@@ -156,7 +156,7 @@ contract EscrowProxyTest is Test {
     function testRewardYapWinners() public {
         vm.startPrank(user1);
         kaitoToken.approve(address(escrowProxy), REQUEST_BUDGET);
-        (uint256 yapId,) =
+        (uint256 yapId,,) =
             escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE_PERCENTAGE, EscrowLogic.YapTokenType.Kaito);
         vm.stopPrank();
 
@@ -192,7 +192,7 @@ contract EscrowProxyTest is Test {
         assertEq(yap1Winners[1], winner2);
     }
 
-    function testGetPairDetails() public {
+    function testGetPairDetails() public view {
         address usdcPair = escrowProxyAsLogic.getPairDetails(address(usdcToken));
         address usdtPair = escrowProxyAsLogic.getPairDetails(address(usdtToken));
 
@@ -225,7 +225,7 @@ contract EscrowProxyTest is Test {
     function testRewardYapWinnersNonAdminReverts() public {
         vm.startPrank(user1);
         kaitoToken.approve(address(escrowProxy), REQUEST_BUDGET);
-        (uint256 yapId,) =
+        (uint256 yapId,,) =
             escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE_PERCENTAGE, EscrowLogic.YapTokenType.Kaito);
         vm.stopPrank();
 
@@ -316,7 +316,7 @@ contract EscrowProxyTest is Test {
     function testCloseYapRequestWithFullRewards() public {
         vm.startPrank(user1);
         kaitoToken.approve(address(escrowProxy), REQUEST_BUDGET);
-        (uint256 yapId, uint256 exactBudget) =
+        (uint256 yapId, uint256 exactBudget,) =
             escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE_PERCENTAGE, EscrowLogic.YapTokenType.Kaito);
         vm.stopPrank();
 
@@ -339,7 +339,7 @@ contract EscrowProxyTest is Test {
         // Create a yap request
         vm.startPrank(user1);
         kaitoToken.approve(address(escrowProxy), REQUEST_BUDGET);
-        (uint256 yapId,) =
+        (uint256 yapId,,) =
             escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE_PERCENTAGE, EscrowLogic.YapTokenType.Kaito);
         vm.stopPrank();
 
@@ -359,7 +359,7 @@ contract EscrowProxyTest is Test {
     function testRewardYapWinnersExceedingBudgetReverts() public {
         vm.startPrank(user1);
         kaitoToken.approve(address(escrowProxy), REQUEST_BUDGET);
-        (uint256 yapId, uint256 exactBudget) =
+        (uint256 yapId, uint256 exactBudget,) =
             escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE_PERCENTAGE, EscrowLogic.YapTokenType.Kaito);
         vm.stopPrank();
 
