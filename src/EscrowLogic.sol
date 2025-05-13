@@ -113,7 +113,7 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
      */
     function createRequest(uint256 _budget, uint256 _feePercentage, YapTokenType paymentToken)
         external
-        returns (uint256, uint256)
+        returns (uint256, uint256, uint256)
     {
         if (_budget == 0) {
             revert BudgetMustBeGreaterThanZero();
@@ -123,6 +123,7 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
         }
 
         uint256 exactBudget;
+        uint256 fee;
 
         if (paymentToken == YapTokenType.Kaito) {
             IERC20(kaitoTokenAddress).safeTransferFrom(msg.sender, address(this), _budget);
@@ -130,6 +131,7 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
             (uint256 _exactBudget, uint256 _fee) = calculateFee(_budget, _feePercentage);
             s_feeBalance += _fee;
             exactBudget = _exactBudget;
+            fee = _fee;
         } else {
             address stableToken = paymentToken == YapTokenType.USDC ? usdcTokenAddress : usdtTokenAddress;
             if (stableToken == address(0)) {
@@ -161,6 +163,7 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
 
             s_feeBalance += _fee;
             exactBudget = _exactBudget;
+            fee = _fee;
         }
 
         s_yapRequestCount += 1;
@@ -169,7 +172,7 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
 
         emit YapRequestCreated(s_yapRequestCount, msg.sender, exactBudget);
 
-        return (s_yapRequestCount, exactBudget);
+        return (s_yapRequestCount, exactBudget, fee);
     }
 
     /**
