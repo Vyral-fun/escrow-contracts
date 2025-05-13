@@ -192,7 +192,7 @@ contract EscrowProxyTest is Test {
         assertEq(yap1Winners[1], winner2);
     }
 
-    function testGetPairDetails() public view {
+    function testGetPairDetails() public {
         address usdcPair = escrowProxyAsLogic.getPairDetails(address(usdcToken));
         address usdtPair = escrowProxyAsLogic.getPairDetails(address(usdtToken));
 
