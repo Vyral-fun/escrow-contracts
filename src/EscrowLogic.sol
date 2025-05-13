@@ -43,7 +43,7 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
         uint256 approvalTime;
     }
 
-    event YapRequestCreated(uint256 indexed yapId, address indexed creator, uint256 budget);
+    event YapRequestCreated(uint256 indexed yapId, address indexed creator, uint256 budget, uint256 fee);
     event WinnerApproved(uint256 indexed yapId, address winner, uint256 amount);
     event Initialized(address kaitoAddress, address[] admins);
     event Claimed(uint256 indexed yapId, address winner, uint256 amount);
@@ -113,7 +113,7 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
      */
     function createRequest(uint256 _budget, uint256 _feePercentage, YapTokenType paymentToken)
         external
-        returns (uint256, uint256, uint256)
+        returns (uint256, uint256, uint256, address)
     {
         if (_budget == 0) {
             revert BudgetMustBeGreaterThanZero();
@@ -170,9 +170,9 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
         s_yapRequests[s_yapRequestCount] =
             YapRequest({yapId: s_yapRequestCount, creator: msg.sender, budget: exactBudget, isActive: true});
 
-        emit YapRequestCreated(s_yapRequestCount, msg.sender, exactBudget);
+        emit YapRequestCreated(s_yapRequestCount, msg.sender, exactBudget, fee);
 
-        return (s_yapRequestCount, exactBudget, fee);
+        return (s_yapRequestCount, exactBudget, fee, msg.sender);
     }
 
     /**
