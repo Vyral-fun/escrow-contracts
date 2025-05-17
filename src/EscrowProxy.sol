@@ -23,10 +23,6 @@ contract EscrowProxy is Ownable {
     constructor(
         address _logicImplementation,
         address _kaitoAddress,
-        address _usdtAddress,
-        address _usdcAddress,
-        address _uniswapFactory,
-        address _uniswapRouter,
         address[] memory _admins,
         uint256 _currentYapRequestCount
     ) Ownable(msg.sender) {
@@ -39,14 +35,7 @@ contract EscrowProxy is Ownable {
 
         (bool success,) = _logicImplementation.delegatecall(
             abi.encodeWithSignature(
-                "initialize(address,address,address,address,address,address[],uint256)",
-                _usdcAddress,
-                _usdtAddress,
-                _kaitoAddress,
-                _uniswapFactory,
-                _uniswapRouter,
-                _admins,
-                _currentYapRequestCount
+                "initialize(address,address[],uint256)", _kaitoAddress, _admins, _currentYapRequestCount
             )
         );
 
