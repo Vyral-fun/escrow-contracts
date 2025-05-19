@@ -1,5 +1,18 @@
 [
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_admin",
+        "type": "address"
+      }
+    ],
+    "name": "addAdmin",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "AlreadyInitialized",
     "type": "error"
@@ -10,14 +23,71 @@
     "type": "error"
   },
   {
-    "inputs": [],
-    "name": "CannotClaimYet",
-    "type": "error"
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_budget",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_fee",
+        "type": "uint256"
+      }
+    ],
+    "name": "createRequest",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
     "inputs": [],
     "name": "FeeMustBeGreaterThanZero",
     "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_kaitoAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address[]",
+        "name": "_admins",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_currentYapRequestCount",
+        "type": "uint256"
+      }
+    ],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
     "inputs": [],
@@ -27,11 +97,6 @@
   {
     "inputs": [],
     "name": "InvalidERC20Address",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidFeePercentage",
     "type": "error"
   },
   {
@@ -51,22 +116,7 @@
   },
   {
     "inputs": [],
-    "name": "NativeTransferFailed",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "NoValidWinnerProvided",
-    "type": "error"
-  },
-  {
-    "inputs": [],
     "name": "NoWinnersProvided",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "NotAValidApproval",
     "type": "error"
   },
   {
@@ -77,16 +127,6 @@
   {
     "inputs": [],
     "name": "NotInitializing",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "NotOwner",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "OnlyAdminsCanApproveWinners",
     "type": "error"
   },
   {
@@ -122,6 +162,36 @@
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "yapRequestId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address[]",
+        "name": "winners",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "winnersRewards",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "rewardYapWinners",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -130,16 +200,6 @@
       }
     ],
     "name": "SafeERC20FailedOperation",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "TokenTransferFailed",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "WinnerAlreadyApproved",
     "type": "error"
   },
   {
@@ -229,6 +289,32 @@
     "type": "event"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_admin",
+        "type": "address"
+      }
+    ],
+    "name": "removeAdmin",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_newTokenAddress",
+        "type": "address"
+      }
+    ],
+    "name": "resetKaitoAddress",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -254,6 +340,19 @@
     "type": "event"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -277,6 +376,24 @@
     ],
     "name": "WinnerApproved",
     "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "withdrawFees",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
     "anonymous": false,
@@ -310,76 +427,9 @@
     "type": "event"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_admin",
-        "type": "address"
-      }
-    ],
-    "name": "addAdmin",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_budget",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_feePercentage",
-        "type": "uint256"
-      },
-      {
-        "internalType": "enum EscrowLogic.YapTokenType",
-        "name": "paymentToken",
-        "type": "uint8"
-      }
-    ],
-    "name": "createRequest",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "getFeeBalance",
     "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      },
       {
         "internalType": "uint256",
         "name": "",
@@ -403,25 +453,6 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "tokenAddress",
-        "type": "address"
-      }
-    ],
-    "name": "getPairDetails",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "getTotalYapRequests",
     "outputs": [
@@ -429,32 +460,6 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getUsdcAddress",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getUsdtAddress",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -524,49 +529,6 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_usdcTokenAddress",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_usdtTokenAddress",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_kaitoAddress",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_uniswapFactory",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_uniswapRouter",
-        "type": "address"
-      },
-      {
-        "internalType": "address[]",
-        "name": "_admins",
-        "type": "address[]"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_currentYapRequestCount",
-        "type": "uint256"
-      }
-    ],
-    "name": "initialize",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
         "name": "_address",
         "type": "address"
       }
@@ -593,119 +555,6 @@
       }
     ],
     "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_admin",
-        "type": "address"
-      }
-    ],
-    "name": "removeAdmin",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "renounceOwnership",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_newTokenAddress",
-        "type": "address"
-      }
-    ],
-    "name": "resetKaitoAddress",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "usdc",
-        "type": "address"
-      }
-    ],
-    "name": "resetUsdcAddress",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "usdt",
-        "type": "address"
-      }
-    ],
-    "name": "resetUsdtAddress",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "yapRequestId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address[]",
-        "name": "winners",
-        "type": "address[]"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "winnersRewards",
-        "type": "uint256[]"
-      }
-    ],
-    "name": "rewardYapWinners",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "newOwner",
-        "type": "address"
-      }
-    ],
-    "name": "transferOwnership",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "withdrawFees",
-    "outputs": [],
-    "stateMutability": "nonpayable",
     "type": "function"
   }
 ]
