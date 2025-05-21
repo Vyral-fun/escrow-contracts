@@ -182,6 +182,17 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
     }
 
     /**
+     * @notice Resets the yap request count
+     * @param newYapRequstCount The new yap request count
+     */
+    function resetYapRequestCount(uint256 newYapRequstCount) external onlyOwner {
+        if (newYapRequstCount == 0) {
+            revert InvalidYapRequestId();
+        }
+        s_yapRequestCount = newYapRequstCount;
+    }
+
+    /**
      * @notice Gets the fee balance
      * @return The current fee balance
      */
