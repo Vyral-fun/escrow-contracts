@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable2Step.sol";
 
 /**
  * @title EscrowProxy
  * @dev This contract works as a proxy that delegates calls to an implementation contract.
  * Only the implementation address and proxy owner are stored here.
  */
-contract EscrowProxy is Ownable {
+contract EscrowProxy {
     // keccak256("eip1967.proxy.implementation") - 1 = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc
     bytes32 internal constant IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
+    // keccak256("escrow.proxy.admin")
+    bytes32 internal constant PROXY_ADMIN_SLOT = 0x8f283970b3a4c7d4c9b6d8e4e3c2b1a0f9e8d7c6b5a4c3b2a1f0e9d8c7b6a5f4;
 
     uint256[100] private __gap;
 
@@ -25,17 +27,25 @@ contract EscrowProxy is Ownable {
         address _kaitoAddress,
         address[] memory _admins,
         uint256 _currentYapRequestCount
-    ) Ownable(msg.sender) {
+    ) {
         if (_logicImplementation == address(0)) {
             revert ImplementationRequired();
         }
+
         assembly {
             sstore(IMPLEMENTATION_SLOT, _logicImplementation)
+        }
+        assembly {
+            sstore(PROXY_ADMIN_SLOT, caller())
         }
 
         (bool success,) = _logicImplementation.delegatecall(
             abi.encodeWithSignature(
-                "initialize(address,address[],uint256)", _kaitoAddress, _admins, _currentYapRequestCount
+                "initialize(address,address[],uint256,address)",
+                _kaitoAddress,
+                _admins,
+                _currentYapRequestCount,
+                msg.sender
             )
         );
 
@@ -44,10 +54,7 @@ contract EscrowProxy is Ownable {
         }
     }
 
-    function upgradeTo(address _newImplementation) external {
-        if (msg.sender != owner()) {
-            revert NotOwner();
-        }
+    function upgradeTo(address _newImplementation) external onlyProxyAdmin {
         if (_newImplementation == address(0)) {
             revert ImplementationRequired();
         }
@@ -85,5 +92,16 @@ contract EscrowProxy is Ownable {
 
     receive() external payable {
         _delegate(_implementation());
+    }
+
+    modifier onlyProxyAdmin() {
+        require(msg.sender == _proxyAdmin(), "Not proxy admin");
+        _;
+    }
+
+    function _proxyAdmin() public view returns (address admin_) {
+        assembly {
+            admin_ := sload(PROXY_ADMIN_SLOT)
+        }
     }
 }
