@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
+contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
 
     uint256 private s_yapRequestCount;
@@ -16,6 +16,10 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
     mapping(uint256 => YapRequest) private s_yapRequests;
     mapping(uint256 => address[]) private s_yapWinners;
     mapping(address => bool) private s_is_admin;
+    uint256 private MINIMUM_FEE = 7500000000000000000; // 7.5% (tiered percentage) of 100 which is the minimum total budget
+    uint256 private MINIMUM_BUDGET = 92500000000000000000;
+
+    uint256[50] private __gap;
 
     struct YapRequest {
         uint256 yapId;
@@ -24,17 +28,14 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
         bool isActive;
     }
 
-    struct ApprovedWinner {
-        address winner;
-        uint256 amount;
-        uint256 approvalTime;
-    }
-
     event YapRequestCreated(uint256 indexed yapId, address indexed creator, uint256 budget, uint256 fee);
-    event WinnerApproved(uint256 indexed yapId, address winner, uint256 amount);
     event Initialized(address kaitoAddress, address[] admins);
     event Claimed(uint256 indexed yapId, address winner, uint256 amount);
+    event AdminAdded(address indexed admin, address indexed addedBy);
+    event AdminRemoved(address indexed admin, address indexed removedBy);
     event RewardsDistributed(uint256 indexed yapRequestId, address[] winners, uint256 totalReward);
+    event FeesWithdrawn(address indexed to, uint256 amount);
+    event CreatorRefunded(uint256 indexed yapRequestId, address creator, uint256 budgetLeft);
 
     error OnlyAdminsCanDistributeRewards();
     error NoWinnersProvided();
@@ -49,19 +50,21 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
     error AlreadyInitialized();
     error NotAdmin();
 
-    function initialize(address _kaitoAddress, address[] memory _admins, uint256 _currentYapRequestCount)
-        public
-        initializer
-    {
-        __Ownable_init(msg.sender);
+    constructor() {
+        _disableInitializers();
+    }
 
-        if (kaitoTokenAddress != address(0)) {
-            revert AlreadyInitialized();
-        }
+    function initialize(
+        address _kaitoAddress,
+        address[] memory _admins,
+        uint256 _currentYapRequestCount,
+        address initialOwner
+    ) public initializer {
+        __Ownable2Step_init();
 
+        _transferOwnership(initialOwner);
         s_yapRequestCount = _currentYapRequestCount;
         s_is_admin[msg.sender] = true;
-        s_feeBalance = 0;
         kaitoTokenAddress = _kaitoAddress;
 
         for (uint256 i = 0; i < _admins.length; i++) {
@@ -80,10 +83,10 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
      * @return The ID of the new yap request
      */
     function createRequest(uint256 _budget, uint256 _fee) external returns (uint256, uint256, uint256, address) {
-        if (_budget == 0) {
+        if (_budget == 0 || _budget < MINIMUM_BUDGET) {
             revert BudgetMustBeGreaterThanZero();
         }
-        if (_fee == 0) {
+        if (_fee == 0 || _fee < MINIMUM_FEE) {
             revert FeeMustBeGreaterThanZero();
         }
 
@@ -106,10 +109,12 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
      * @param winners Array of winner addresses
      * @param winnersRewards Array of corresponding reward amounts for each winner
      */
-    function rewardYapWinners(uint256 yapRequestId, address[] calldata winners, uint256[] calldata winnersRewards)
-        external
-        nonReentrant
-    {
+    function rewardYapWinners(
+        uint256 yapRequestId,
+        address[] calldata winners,
+        uint256[] calldata winnersRewards,
+        bool isLastBatch
+    ) external nonReentrant {
         if (!s_is_admin[msg.sender]) {
             revert OnlyAdminsCanDistributeRewards();
         }
@@ -145,13 +150,21 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
 
         s_yapRequests[yapRequestId].budget -= totalReward;
 
-        if (s_yapRequests[yapRequestId].budget == 0) {
-            s_yapRequests[yapRequestId].isActive = false;
-        }
-
         for (uint256 i = 0; i < winnerslength; i++) {
             s_yapWinners[yapRequestId].push(winners[i]);
             IERC20(kaitoTokenAddress).safeTransfer(winners[i], winnersRewards[i]);
+        }
+
+        if (isLastBatch) {
+            uint256 budgetLeft = s_yapRequests[yapRequestId].budget;
+            if (budgetLeft > 0) {
+                IERC20(kaitoTokenAddress).safeTransfer(yapRequest.creator, budgetLeft);
+
+                emit CreatorRefunded(yapRequestId, yapRequest.creator, budgetLeft);
+            }
+
+            s_yapRequests[yapRequestId].budget = 0;
+            s_yapRequests[yapRequestId].isActive = false;
         }
 
         emit RewardsDistributed(yapRequestId, winners, totalReward);
@@ -171,14 +184,38 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
     }
 
     /**
-     * @notice Resets the token address yap reward
-     * @param _newTokenAddress The new token address
+     * @notice Resets the yap request count
+     * @param newYapRequstCount The new yap request count
      */
-    function resetKaitoAddress(address _newTokenAddress) external onlyOwner {
-        if (_newTokenAddress == address(0)) {
-            revert InvalidERC20Address();
+    function resetYapRequestCount(uint256 newYapRequstCount) external onlyOwner {
+        if (newYapRequstCount == 0) {
+            revert InvalidYapRequestId();
         }
-        kaitoTokenAddress = _newTokenAddress;
+        s_yapRequestCount = newYapRequstCount;
+    }
+
+    /**
+     * @notice Resets the minimum fee for yap requests
+     * @param newMinimumFee The new minimum fee
+     * @dev The new minimum fee must be greater than zero
+     */
+    function resetMinimumFee(uint256 newMinimumFee) external onlyOwner {
+        if (newMinimumFee == 0) {
+            revert FeeMustBeGreaterThanZero();
+        }
+        MINIMUM_FEE = newMinimumFee;
+    }
+
+    /**
+     * @notice Resets the minimum budget for yap requests
+     * @param newMinimumBudget The new minimum budget
+     * @dev The new minimum budget must be greater than zero
+     */
+    function resetMinimumBudget(uint256 newMinimumBudget) external onlyOwner {
+        if (newMinimumBudget == 0) {
+            revert BudgetMustBeGreaterThanZero();
+        }
+        MINIMUM_BUDGET = newMinimumBudget;
     }
 
     /**
@@ -225,11 +262,11 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
     function getKaitoAddress() external view returns (address) {
         return kaitoTokenAddress;
     }
+
     /**
      * @notice Checks if an address is an admin
      * @return bool indicating if the address is an admin
      */
-
     function isAdmin(address _address) external view returns (bool) {
         return s_is_admin[_address];
     }
@@ -240,6 +277,7 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
      */
     function addAdmin(address _admin) external onlyOwner {
         s_is_admin[_admin] = true;
+        emit AdminAdded(_admin, msg.sender);
     }
 
     /**
@@ -248,6 +286,7 @@ contract EscrowLogic is Initializable, OwnableUpgradeable, ReentrancyGuard {
      */
     function removeAdmin(address _admin) external onlyOwner {
         s_is_admin[_admin] = false;
+        emit AdminRemoved(_admin, msg.sender);
     }
 
     modifier onlyAdmin() {
