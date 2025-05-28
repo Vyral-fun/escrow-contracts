@@ -108,6 +108,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
      * @param yapRequestId The ID of the yap request
      * @param winners Array of winner addresses
      * @param winnersRewards Array of corresponding reward amounts for each winner
+     * @param isLastBatch Indicates if this is the last batch of winners
      */
     function rewardYapWinners(
         uint256 yapRequestId,
