@@ -1,5 +1,12 @@
 [
   {
+    "inputs": [],
+    "name": "acceptOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -11,6 +18,11 @@
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
+  },
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
   },
   {
     "inputs": [],
@@ -82,6 +94,11 @@
         "internalType": "uint256",
         "name": "_currentYapRequestCount",
         "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "initialOwner",
+        "type": "address"
       }
     ],
     "name": "initialize",
@@ -162,6 +179,19 @@
     "type": "error"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_admin",
+        "type": "address"
+      }
+    ],
+    "name": "removeAdmin",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "renounceOwnership",
     "outputs": [],
@@ -172,21 +202,24 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "yapRequestId",
+        "name": "newMinimumBudget",
         "type": "uint256"
-      },
-      {
-        "internalType": "address[]",
-        "name": "winners",
-        "type": "address[]"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "winnersRewards",
-        "type": "uint256[]"
       }
     ],
-    "name": "rewardYapWinners",
+    "name": "resetMinimumBudget",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "newYapRequstCount",
+        "type": "uint256"
+      }
+    ],
+    "name": "resetYapRequestCount",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -217,6 +250,44 @@
     "inputs": [
       {
         "indexed": true,
+        "internalType": "address",
+        "name": "admin",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "addedBy",
+        "type": "address"
+      }
+    ],
+    "name": "AdminAdded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "admin",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "removedBy",
+        "type": "address"
+      }
+    ],
+    "name": "AdminRemoved",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
         "internalType": "uint256",
         "name": "yapId",
         "type": "uint256"
@@ -235,6 +306,50 @@
       }
     ],
     "name": "Claimed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "yapRequestId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "budgetLeft",
+        "type": "uint256"
+      }
+    ],
+    "name": "CreatorRefunded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "FeesWithdrawn",
     "type": "event"
   },
   {
@@ -285,31 +400,37 @@
         "type": "address"
       }
     ],
+    "name": "OwnershipTransferStarted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
     "name": "OwnershipTransferred",
     "type": "event"
   },
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "_admin",
-        "type": "address"
+        "internalType": "uint256",
+        "name": "newMinimumFee",
+        "type": "uint256"
       }
     ],
-    "name": "removeAdmin",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_newTokenAddress",
-        "type": "address"
-      }
-    ],
-    "name": "resetKaitoAddress",
+    "name": "resetMinimumFee",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -342,6 +463,34 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "yapRequestId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address[]",
+        "name": "winners",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "winnersRewards",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "bool",
+        "name": "isLastBatch",
+        "type": "bool"
+      }
+    ],
+    "name": "rewardYapWinners",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "newOwner",
         "type": "address"
@@ -351,31 +500,6 @@
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "yapId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "winner",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "WinnerApproved",
-    "type": "event"
   },
   {
     "inputs": [
@@ -547,6 +671,19 @@
   {
     "inputs": [],
     "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "pendingOwner",
     "outputs": [
       {
         "internalType": "address",
