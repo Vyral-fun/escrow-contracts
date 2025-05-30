@@ -234,6 +234,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
      */
     function getTotalBalance() external view returns (uint256) {
         return IERC20(kaitoTokenAddress).balanceOf(address(this));
+    }
 
     /**
      * @notice Gets a yap request by ID
