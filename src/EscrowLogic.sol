@@ -229,6 +229,14 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
     }
 
     /**
+     * @notice Gets the total balance of the contract
+     * @return The total balance of the contract in Kaito tokens
+     */
+    function getTotalBalance() external view returns (uint256) {
+        return IERC20(kaitoTokenAddress).balanceOf(address(this));
+    }
+
+    /**
      * @notice Gets a yap request by ID
      * @param yapRequestId The ID of the yap request
      * @return The yap request details
