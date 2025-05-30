@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/Ownable2Step.sol";
-
 /**
  * @title EscrowProxy
  * @dev This contract works as a proxy that delegates calls to an implementation contract.
@@ -11,8 +9,8 @@ import "@openzeppelin/contracts/access/Ownable2Step.sol";
 contract EscrowProxy {
     // keccak256("eip1967.proxy.implementation") - 1 = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc
     bytes32 internal constant IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
-    // keccak256("escrow.proxy.admin")
-    bytes32 internal constant PROXY_ADMIN_SLOT = 0x8f283970b3a4c7d4c9b6d8e4e3c2b1a0f9e8d7c6b5a4c3b2a1f0e9d8c7b6a5f4;
+    // keccak256("eip1967.proxy.admin") - 1 = 0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103
+    bytes32 internal constant PROXY_ADMIN_SLOT = 0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
 
     uint256[100] private __gap;
 
@@ -20,7 +18,6 @@ contract EscrowProxy {
 
     error ImplementationRequired();
     error InitializationFailed();
-    error NotOwner();
 
     constructor(
         address _logicImplementation,

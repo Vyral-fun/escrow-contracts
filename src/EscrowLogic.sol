@@ -16,7 +16,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
     mapping(uint256 => YapRequest) private s_yapRequests;
     mapping(uint256 => address[]) private s_yapWinners;
     mapping(address => bool) private s_is_admin;
-    uint256 private MINIMUM_FEE = 7500000000000000000; // 7.5% (tiered percentage) of 100 which is the minimum total budget
+    uint256 private MINIMUM_FEE = 7500000000000000000;
     uint256 private MINIMUM_BUDGET = 92500000000000000000;
 
     uint256[50] private __gap;
@@ -36,6 +36,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
     event RewardsDistributed(uint256 indexed yapRequestId, address[] winners, uint256 totalReward);
     event FeesWithdrawn(address indexed to, uint256 amount);
     event CreatorRefunded(uint256 indexed yapRequestId, address creator, uint256 budgetLeft);
+    event YapRequestCountReset(uint256 newYapRequestCount);
 
     error OnlyAdminsCanDistributeRewards();
     error NoWinnersProvided();
@@ -45,9 +46,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
     error YapRequestNotActive();
     error InvalidYapRequestId();
     error InvalidWinnersProvided();
-    error InvalidERC20Address();
     error InsufficientBudget();
-    error AlreadyInitialized();
     error NotAdmin();
 
     constructor() {
@@ -193,6 +192,8 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
             revert InvalidYapRequestId();
         }
         s_yapRequestCount = newYapRequstCount;
+
+        emit YapRequestCountReset(newYapRequstCount);
     }
 
     /**
@@ -288,12 +289,5 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
     function removeAdmin(address _admin) external onlyOwner {
         s_is_admin[_admin] = false;
         emit AdminRemoved(_admin, msg.sender);
-    }
-
-    modifier onlyAdmin() {
-        if (!s_is_admin[msg.sender]) {
-            revert NotAdmin();
-        }
-        _;
     }
 }
