@@ -2,7 +2,7 @@
 
 ### Base Sepolia (Staging)
 
-- Escrow: 0xdcb6256afd4e9bf395B846F9Ee78C7EE9c20Cd2e
+- Reward: 0x7a2547ED15f753A0a99Cd351C150d52bC6E1B175
 - Kaito: 0xf1966A1d1a6098c80341f38DCE1a54F8D67e8c87
 
 ### Base Mainnet (Prod)
