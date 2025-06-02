@@ -37,6 +37,8 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
     event FeesWithdrawn(address indexed to, uint256 amount);
     event CreatorRefunded(uint256 indexed yapRequestId, address creator, uint256 budgetLeft);
     event YapRequestCountReset(uint256 newYapRequestCount);
+    event MinimumFeeReset(uint256 newMinimumFee);
+    event MinimumBudgetReset(uint256 newMinimumBudget);
 
     error OnlyAdminsCanDistributeRewards();
     error NoWinnersProvided();
@@ -206,6 +208,8 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
             revert FeeMustBeGreaterThanZero();
         }
         MINIMUM_FEE = newMinimumFee;
+
+        emit MinimumFeeReset(newMinimumFee);
     }
 
     /**
@@ -218,6 +222,8 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
             revert BudgetMustBeGreaterThanZero();
         }
         MINIMUM_BUDGET = newMinimumBudget;
+
+        emit MinimumBudgetReset(newMinimumBudget);
     }
 
     /**
