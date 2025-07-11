@@ -39,6 +39,9 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
     event YapRequestCountReset(uint256 newYapRequestCount);
     event MinimumFeeReset(uint256 newMinimumFee);
     event MinimumBudgetReset(uint256 newMinimumBudget);
+    event YapRequestTopUp(
+        uint256 indexed yapId, address indexed creator, uint256 additionalBudget, uint256 additionalFee
+    );
 
     error OnlyAdminsCanDistributeRewards();
     error NoWinnersProvided();
@@ -50,6 +53,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
     error InvalidWinnersProvided();
     error InsufficientBudget();
     error NotAdmin();
+    error NotTheCreator();
 
     constructor() {
         _disableInitializers();
@@ -102,6 +106,41 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
         emit YapRequestCreated(s_yapRequestCount, msg.sender, _budget, _fee);
 
         return (s_yapRequestCount, _budget, _fee, msg.sender);
+    }
+
+    function topUpRequest(uint256 yapRequestId, uint256 additionalBudget, uint256 additionalFee)
+        external
+        returns (uint256, uint256, uint256, address)
+    {
+        uint256 total = additionalBudget + additionalFee;
+
+        if (additionalFee == 0 || additionalFee < MINIMUM_FEE) {
+            revert FeeMustBeGreaterThanZero();
+        }
+
+        if (additionalBudget == 0 || additionalBudget < MINIMUM_BUDGET) {
+            revert BudgetMustBeGreaterThanZero();
+        }
+
+        YapRequest storage yapRequest = s_yapRequests[yapRequestId];
+        if (yapRequest.creator != msg.sender) {
+            revert NotTheCreator();
+        }
+
+        if (yapRequest.yapId == 0) {
+            revert InvalidYapRequestId();
+        }
+
+        if (!yapRequest.isActive) {
+            revert YapRequestNotActive();
+        }
+
+        IERC20(kaitoTokenAddress).safeTransferFrom(msg.sender, address(this), total);
+        yapRequest.budget += additionalBudget;
+
+        emit YapRequestTopUp(yapRequest.yapId, yapRequest.creator, additionalBudget, additionalFee);
+
+        return (yapRequestId, yapRequest.budget, additionalFee, msg.sender);
     }
 
     /**
