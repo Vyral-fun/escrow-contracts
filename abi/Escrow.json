@@ -51,6 +51,11 @@
   },
   {
     "inputs": [],
+    "name": "NotTheCreator",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "OnlyAdminsCanDistributeRewards",
     "type": "error"
   },
@@ -245,6 +250,32 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newMinimumBudget",
+        "type": "uint256"
+      }
+    ],
+    "name": "MinimumBudgetReset",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newMinimumFee",
+        "type": "uint256"
+      }
+    ],
+    "name": "MinimumFeeReset",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "address",
         "name": "previousOwner",
@@ -349,6 +380,37 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "yapId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "additionalBudget",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "additionalFee",
+        "type": "uint256"
+      }
+    ],
+    "name": "YapRequestTopUp",
+    "type": "event"
+  },
+  {
     "inputs": [],
     "name": "acceptOwnership",
     "outputs": [],
@@ -428,6 +490,19 @@
         "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getTotalBalance",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -663,6 +738,50 @@
     ],
     "name": "rewardYapWinners",
     "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "yapRequestId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "additionalBudget",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "additionalFee",
+        "type": "uint256"
+      }
+    ],
+    "name": "topUpRequest",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "nonpayable",
     "type": "function"
   },

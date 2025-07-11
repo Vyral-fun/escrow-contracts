@@ -390,4 +390,70 @@ contract EscrowProxyTest is Test {
         vm.expectRevert(EscrowLogic.YapRequestNotFound.selector);
         escrowProxyAsLogic.getYapRequest(999);
     }
+
+    function testTopUpRequest() public {
+        vm.startPrank(user1);
+
+        kaitoToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
+
+        vm.expectEmit(true, true, false, true);
+        emit YapRequestCreated(1, user1, 9 ether, 1 ether);
+
+        (uint256 yapId, uint256 exactBudget,,) = escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE);
+
+        vm.stopPrank();
+
+        assertEq(yapId, 1);
+        assertEq(exactBudget, 9 ether);
+
+        EscrowLogic.YapRequest memory yapRequest = escrowProxyAsLogic.getYapRequest(1);
+
+        assertEq(yapRequest.creator, user1);
+        assertEq(yapRequest.budget, 9 ether);
+        assertTrue(yapRequest.isActive);
+
+        uint256 feeBalance = escrowProxyAsLogic.getFeeBalance();
+        assertEq(feeBalance, 1 ether);
+
+        vm.startPrank(user1);
+        kaitoToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
+        (, uint256 newTotalBudget,,) = escrowProxyAsLogic.topUpRequest(yapId, REQUEST_BUDGET, FEE);
+
+        vm.stopPrank();
+
+        assertEq(yapId, 1);
+        assertEq(newTotalBudget, 18 ether);
+    }
+
+    function testTopUpRequestNonCreatorReverts() public {
+        vm.startPrank(user1);
+
+        kaitoToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
+
+        vm.expectEmit(true, true, false, true);
+        emit YapRequestCreated(1, user1, 9 ether, 1 ether);
+
+        (uint256 yapId, uint256 exactBudget,,) = escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE);
+
+        vm.stopPrank();
+
+        assertEq(yapId, 1);
+        assertEq(exactBudget, 9 ether);
+
+        EscrowLogic.YapRequest memory yapRequest = escrowProxyAsLogic.getYapRequest(1);
+
+        assertEq(yapRequest.creator, user1);
+        assertEq(yapRequest.budget, 9 ether);
+        assertTrue(yapRequest.isActive);
+
+        uint256 feeBalance = escrowProxyAsLogic.getFeeBalance();
+        assertEq(feeBalance, 1 ether);
+
+        vm.startPrank(user2);
+        kaitoToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
+        vm.expectRevert(EscrowLogic.NotTheCreator.selector);
+        escrowProxyAsLogic.topUpRequest(yapId, REQUEST_BUDGET, FEE);
+
+        vm.stopPrank();
+    }
 }
