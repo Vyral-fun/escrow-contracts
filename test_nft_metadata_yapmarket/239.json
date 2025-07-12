@@ -1,0 +1,23 @@
+{
+  "attributes": [
+    {
+      "trait_type": "Background",
+      "value": "Purple"
+    },
+    {
+      "trait_type": "Eyes",
+      "value": "Normal"
+    },
+    {
+      "trait_type": "Clothing",
+      "value": "T-Shirt"
+    },
+    {
+      "trait_type": "Special",
+      "value": "Magic Wand"
+    }
+  ],
+  "description": "This is NFT 239 from Yap Market Collection.",
+  "image": "https://azure-purring-partridge-223.mypinata.cloud/ipfs/bafkreifpsjfj4syde3ag5ayvq7mptw7yiawh7ktt465vnkvilp6nwhb5oq",
+  "name": "Yap Market NFT #239"
+}

@@ -1,0 +1,23 @@
+{
+  "attributes": [
+    {
+      "trait_type": "Background",
+      "value": "Yellow"
+    },
+    {
+      "trait_type": "Eyes",
+      "value": "Laser"
+    },
+    {
+      "trait_type": "Clothing",
+      "value": "T-Shirt"
+    },
+    {
+      "trait_type": "Special",
+      "value": "None"
+    }
+  ],
+  "description": "This is NFT 132 from Yap Market Collection.",
+  "image": "https://azure-purring-partridge-223.mypinata.cloud/ipfs/bafkreifpsjfj4syde3ag5ayvq7mptw7yiawh7ktt465vnkvilp6nwhb5oq",
+  "name": "Yap Market NFT #132"
+}

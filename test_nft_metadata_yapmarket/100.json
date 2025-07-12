@@ -1,0 +1,23 @@
+{
+  "attributes": [
+    {
+      "trait_type": "Background",
+      "value": "Green"
+    },
+    {
+      "trait_type": "Eyes",
+      "value": "Rainbow"
+    },
+    {
+      "trait_type": "Clothing",
+      "value": "Hoodie"
+    },
+    {
+      "trait_type": "Special",
+      "value": "Magic Wand"
+    }
+  ],
+  "description": "This is NFT 100 from Yap Market Collection.",
+  "image": "https://azure-purring-partridge-223.mypinata.cloud/ipfs/bafkreifpsjfj4syde3ag5ayvq7mptw7yiawh7ktt465vnkvilp6nwhb5oq",
+  "name": "Yap Market NFT #100"
+}
