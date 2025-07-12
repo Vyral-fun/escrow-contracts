@@ -1,0 +1,23 @@
+{
+  "attributes": [
+    {
+      "trait_type": "Background",
+      "value": "Red"
+    },
+    {
+      "trait_type": "Eyes",
+      "value": "Closed"
+    },
+    {
+      "trait_type": "Clothing",
+      "value": "Cape"
+    },
+    {
+      "trait_type": "Special",
+      "value": "Golden Crown"
+    }
+  ],
+  "description": "This is NFT 156 from Yap Market Collection.",
+  "image": "https://azure-purring-partridge-223.mypinata.cloud/ipfs/bafkreifpsjfj4syde3ag5ayvq7mptw7yiawh7ktt465vnkvilp6nwhb5oq",
+  "name": "Yap Market NFT #156"
+}
