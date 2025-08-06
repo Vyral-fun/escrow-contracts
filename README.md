@@ -2,13 +2,17 @@
 
 ### Base Sepolia (Staging)
 
-- Reward: 0x7a2547ED15f753A0a99Cd351C150d52bC6E1B175
+- Escrow: 0xdcb6256afd4e9bf395B846F9Ee78C7EE9c20Cd2e
 - Kaito: 0xf1966A1d1a6098c80341f38DCE1a54F8D67e8c87
 
 ### Base Mainnet (Prod)
 
-- Escrow:
+- Escrow: 0x29957e3b3DaBeDBE830b0De53C2C9293d0DB1bda
 - Kaito: 0x98d0baa52b2D063E780DE12F615f963Fe8537553
+
+### Monad Testnet (Staging)
+
+- Escrow: 0x7a2547ED15f753A0a99Cd351C150d52bC6E1B175
 
 ## Foundry
 
