@@ -136,6 +136,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
         }
 
         IERC20(kaitoTokenAddress).safeTransferFrom(msg.sender, address(this), total);
+        s_feeBalance += additionalFee;
         yapRequest.budget += additionalBudget;
 
         emit YapRequestTopUp(yapRequest.yapId, yapRequest.creator, additionalBudget, additionalFee);
