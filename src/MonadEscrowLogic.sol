@@ -12,12 +12,11 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
 
     uint256 private s_yapRequestCount;
     uint256 private s_feeBalance;
-    address private kaitoTokenAddress;
     mapping(uint256 => YapRequest) private s_yapRequests;
     mapping(uint256 => address[]) private s_yapWinners;
     mapping(address => bool) private s_is_admin;
-    uint256 private MINIMUM_FEE = 7500000000000000000;
-    uint256 private MINIMUM_BUDGET = 92500000000000000000;
+    uint256 private MINIMUM_FEE = 500000000000000000000;
+    uint256 private MINIMUM_BUDGET = 4500000000000000000000;
 
     uint256[50] private __gap;
 
@@ -29,7 +28,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
     }
 
     event YapRequestCreated(uint256 indexed yapId, address indexed creator, uint256 budget, uint256 fee);
-    event Initialized(address kaitoAddress, address[] admins);
+    event Initialized(address[] admins, uint256 currentYapRequestCount, address owner);
     event Claimed(uint256 indexed yapId, address winner, uint256 amount);
     event AdminAdded(address indexed admin, address indexed addedBy);
     event AdminRemoved(address indexed admin, address indexed removedBy);
@@ -47,6 +46,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
     error NoWinnersProvided();
     error FeeMustBeGreaterThanZero();
     error BudgetMustBeGreaterThanZero();
+    error InvalidValue();
     error YapRequestNotFound();
     error YapRequestNotActive();
     error InvalidYapRequestId();
@@ -59,24 +59,21 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
         _disableInitializers();
     }
 
-    function initialize(
-        address _kaitoAddress,
-        address[] memory _admins,
-        uint256 _currentYapRequestCount,
-        address initialOwner
-    ) public initializer {
+    function initialize(address[] memory _admins, uint256 _currentYapRequestCount, address initialOwner)
+        public
+        initializer
+    {
         __Ownable2Step_init();
 
         _transferOwnership(initialOwner);
         s_yapRequestCount = _currentYapRequestCount;
         s_is_admin[msg.sender] = true;
-        kaitoTokenAddress = _kaitoAddress;
 
         for (uint256 i = 0; i < _admins.length; i++) {
             s_is_admin[_admins[i]] = true;
         }
 
-        emit Initialized(_kaitoAddress, _admins);
+        emit Initialized(_admins, _currentYapRequestCount, initialOwner);
     }
 
     /**
@@ -87,7 +84,12 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
      * @dev The budget must be greater than zero
      * @return The ID of the new yap request
      */
-    function createRequest(uint256 _budget, uint256 _fee) external returns (uint256, uint256, uint256, address) {
+    function createRequest(uint256 _budget, uint256 _fee)
+        external
+        payable
+        nonReentrant
+        returns (uint256, uint256, uint256, address)
+    {
         if (_budget == 0 || _budget < MINIMUM_BUDGET) {
             revert BudgetMustBeGreaterThanZero();
         }
@@ -96,7 +98,10 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
         }
 
         uint256 total = _budget + _fee;
-        IERC20(kaitoTokenAddress).safeTransferFrom(msg.sender, address(this), total);
+
+        if (msg.value < total) {
+            revert InvalidValue();
+        }
 
         s_yapRequestCount += 1;
         s_yapRequests[s_yapRequestCount] =
@@ -110,6 +115,8 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
 
     function topUpRequest(uint256 yapRequestId, uint256 additionalBudget, uint256 additionalFee)
         external
+        payable
+        nonReentrant
         returns (uint256, uint256, uint256, address)
     {
         uint256 total = additionalBudget + additionalFee;
@@ -135,7 +142,10 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
             revert YapRequestNotActive();
         }
 
-        IERC20(kaitoTokenAddress).safeTransferFrom(msg.sender, address(this), total);
+        if (msg.value < total) {
+            revert InvalidValue();
+        }
+
         s_feeBalance += additionalFee;
         yapRequest.budget += additionalBudget;
 
@@ -194,13 +204,15 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
 
         for (uint256 i = 0; i < winnerslength; i++) {
             s_yapWinners[yapRequestId].push(winners[i]);
-            IERC20(kaitoTokenAddress).safeTransfer(winners[i], winnersRewards[i]);
+            (bool sent,) = winners[i].call{value: winnersRewards[i]}("");
+            require(sent, "Failed to send Ether");
         }
 
         if (isLastBatch) {
             uint256 budgetLeft = s_yapRequests[yapRequestId].budget;
             if (budgetLeft > 0) {
-                IERC20(kaitoTokenAddress).safeTransfer(yapRequest.creator, budgetLeft);
+                (bool sent,) = yapRequest.creator.call{value: budgetLeft}("");
+                require(sent, "Failed to send Ether");
 
                 emit CreatorRefunded(yapRequestId, yapRequest.creator, budgetLeft);
             }
@@ -222,7 +234,8 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
             revert InsufficientBudget();
         }
         s_feeBalance -= amount;
-        IERC20(kaitoTokenAddress).safeTransfer(to, amount);
+        (bool sent,) = to.call{value: amount}("");
+        require(sent, "Failed to send Ether");
     }
 
     /**
@@ -279,7 +292,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
      * @return The total balance of the contract in Kaito tokens
      */
     function getTotalBalance() external view returns (uint256) {
-        return IERC20(kaitoTokenAddress).balanceOf(address(this));
+        return address(this).balance;
     }
 
     /**
@@ -309,14 +322,6 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
      */
     function getWinners(uint256 yapRequestId) external view returns (address[] memory) {
         return s_yapWinners[yapRequestId];
-    }
-
-    /**
-     * @notice Gets the address of the Kaito token
-     * @return The address of the Kaito token
-     */
-    function getKaitoAddress() external view returns (address) {
-        return kaitoTokenAddress;
     }
 
     /**
