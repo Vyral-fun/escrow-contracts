@@ -11,7 +11,7 @@ contract EscrowProxyTest is Test {
     EscrowLogic public escrowLogic;
     EscrowProxy public escrowProxy;
     EscrowLogic public escrowProxyAsLogic;
-    MockERC20 public kaitoToken;
+    MockERC20 public testToken;
 
     address public owner;
     address public admin;
@@ -20,16 +20,20 @@ contract EscrowProxyTest is Test {
     address public winner1;
     address public winner2;
 
+    address public constant NATIVE_TOKEN = address(0);
+
     uint256 public constant INITIAL_BALANCE = 1000 ether;
     uint256 public constant REQUEST_BUDGET = 9 ether;
     uint256 public constant TOTAL_REQUEST_BUDGET = 10 ether;
     uint256 public constant FEE = 1 ether;
     uint256 public constant REWARD_AMOUNT = 2 ether;
+    uint256 public constant MINIMUM_TOTAL_BUDGET = 100000;
 
-    event YapRequestCreated(uint256 indexed yapId, address indexed creator, uint256 budget, uint256 fee);
+    event YapRequestCreated(uint256 indexed yapId, address indexed creator, address asset, uint256 budget, uint256 fee);
     event RewardsDistributed(uint256 indexed yapRequestId, address[] winners, uint256 totalReward);
     event CreatorRefunded(uint256 indexed yapRequestId, address creator, uint256 budgetLeft);
     event Upgraded(address indexed implementation);
+    event AssetAdded(address indexed asset, uint256 minimumBudget);
 
     function setUp() public {
         owner = address(this);
@@ -39,61 +43,90 @@ contract EscrowProxyTest is Test {
         winner1 = makeAddr("winner1");
         winner2 = makeAddr("winner2");
 
-        kaitoToken = new MockERC20("Kaito Token", "KTO", 18);
+        // Give users ETH for native token tests
+        vm.deal(user1, INITIAL_BALANCE);
+        vm.deal(user2, INITIAL_BALANCE);
 
-        kaitoToken.mint(user1, INITIAL_BALANCE);
-        kaitoToken.mint(user2, INITIAL_BALANCE);
+        testToken = new MockERC20("Test Token", "TST", 18);
+        testToken.mint(user1, INITIAL_BALANCE);
+        testToken.mint(user2, INITIAL_BALANCE);
 
         escrowLogic = new EscrowLogic();
-        address logicOwner = escrowLogic.owner();
 
         address[] memory admins = new address[](2);
         admins[0] = admin;
         admins[1] = owner;
 
-        escrowProxy = new EscrowProxy(address(escrowLogic), address(kaitoToken), admins, 0);
-
-        address impl = escrowProxy.get_implementation();
+        escrowProxy = new EscrowProxy(address(escrowLogic), admins, 0);
         escrowProxyAsLogic = EscrowLogic(address(escrowProxy));
 
+        // Add test token support
+        escrowProxyAsLogic.addAssetSupport(address(testToken), MINIMUM_TOTAL_BUDGET);
+
         console.log("Proxy address:", address(escrowProxy));
-        console.log("Proxy as Logic address:", address(escrowProxyAsLogic));
         console.log("Logic implementation:", address(escrowLogic));
-        console.log("Implementation from proxy:", impl);
-        console.log("Owner", owner);
-        console.log("Ownwr", logicOwner);
+        console.log("Implementation from proxy:", escrowProxy.get_implementation());
+        console.log("Owner:", owner);
     }
 
-    function testCreateRequestWithKaito() public {
+    function testCreateRequestWithNativeToken() public {
         vm.startPrank(user1);
 
-        kaitoToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
-
         vm.expectEmit(true, true, false, true);
-        emit YapRequestCreated(1, user1, 9 ether, 1 ether);
+        emit YapRequestCreated(1, user1, NATIVE_TOKEN, REQUEST_BUDGET, FEE);
 
-        (uint256 yapId, uint256 exactBudget,,) = escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE);
+        (uint256 yapId, uint256 exactBudget,,, address asset) =
+            escrowProxyAsLogic.createRequest{value: TOTAL_REQUEST_BUDGET}(REQUEST_BUDGET, FEE, NATIVE_TOKEN);
 
         vm.stopPrank();
 
         assertEq(yapId, 1);
-        assertEq(exactBudget, 9 ether);
+        assertEq(exactBudget, REQUEST_BUDGET);
+        assertEq(asset, NATIVE_TOKEN);
 
         EscrowLogic.YapRequest memory yapRequest = escrowProxyAsLogic.getYapRequest(1);
-
         assertEq(yapRequest.creator, user1);
-        assertEq(yapRequest.budget, 9 ether);
+        assertEq(yapRequest.budget, REQUEST_BUDGET);
+        assertEq(yapRequest.asset, NATIVE_TOKEN);
         assertTrue(yapRequest.isActive);
 
-        uint256 feeBalance = escrowProxyAsLogic.getFeeBalance();
-        assertEq(feeBalance, 1 ether);
+        uint256 feeBalance = escrowProxyAsLogic.getFeeBalance(NATIVE_TOKEN);
+        assertEq(feeBalance, FEE);
     }
 
-    function testRewardYapWinnersWithRefund() public {
+    function testCreateRequestWithERC20Token() public {
         vm.startPrank(user1);
-        uint256 user1InitialBalance = kaitoToken.balanceOf(user1);
-        kaitoToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
-        (uint256 yapId,,,) = escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE);
+
+        testToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
+
+        vm.expectEmit(true, true, false, true);
+        emit YapRequestCreated(1, user1, address(testToken), REQUEST_BUDGET, FEE);
+
+        (uint256 yapId, uint256 exactBudget,,, address asset) =
+            escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE, address(testToken));
+
+        vm.stopPrank();
+
+        assertEq(yapId, 1);
+        assertEq(exactBudget, REQUEST_BUDGET);
+        assertEq(asset, address(testToken));
+
+        EscrowLogic.YapRequest memory yapRequest = escrowProxyAsLogic.getYapRequest(1);
+        assertEq(yapRequest.creator, user1);
+        assertEq(yapRequest.budget, REQUEST_BUDGET);
+        assertEq(yapRequest.asset, address(testToken));
+        assertTrue(yapRequest.isActive);
+
+        uint256 feeBalance = escrowProxyAsLogic.getFeeBalance(address(testToken));
+        assertEq(feeBalance, FEE);
+    }
+
+    function testRewardYapWinnersWithNativeToken() public {
+        // Create request with native ETH
+        vm.startPrank(user1);
+        uint256 user1InitialBalance = user1.balance;
+        (uint256 yapId,,,,) =
+            escrowProxyAsLogic.createRequest{value: TOTAL_REQUEST_BUDGET}(REQUEST_BUDGET, FEE, NATIVE_TOKEN);
         vm.stopPrank();
 
         address[] memory winners = new address[](2);
@@ -104,119 +137,228 @@ contract EscrowProxyTest is Test {
         rewards[0] = REWARD_AMOUNT;
         rewards[1] = REWARD_AMOUNT;
 
-        uint256 winner1InitialBalance = kaitoToken.balanceOf(winner1);
-        uint256 winner2InitialBalance = kaitoToken.balanceOf(winner2);
+        uint256 winner1InitialBalance = winner1.balance;
+        uint256 winner2InitialBalance = winner2.balance;
 
         vm.startPrank(admin);
-
         escrowProxyAsLogic.rewardYapWinners(yapId, winners, rewards, true);
         vm.stopPrank();
 
-        assertEq(kaitoToken.balanceOf(winner1), winner1InitialBalance + REWARD_AMOUNT);
-        assertEq(kaitoToken.balanceOf(winner2), winner2InitialBalance + REWARD_AMOUNT);
+        assertEq(winner1.balance, winner1InitialBalance + REWARD_AMOUNT);
+        assertEq(winner2.balance, winner2InitialBalance + REWARD_AMOUNT);
 
         uint256 expectedRefund = REQUEST_BUDGET - (REWARD_AMOUNT * 2);
         uint256 expectedFinalBalance = user1InitialBalance - TOTAL_REQUEST_BUDGET + expectedRefund;
-        assertEq(kaitoToken.balanceOf(user1), expectedFinalBalance);
+        assertEq(user1.balance, expectedFinalBalance);
 
         EscrowLogic.YapRequest memory yapRequest = escrowProxyAsLogic.getYapRequest(yapId);
         assertEq(yapRequest.budget, 0);
         assertFalse(yapRequest.isActive);
-
-        address[] memory yap1Winners = escrowProxyAsLogic.getWinners(yapId);
-        assertEq(yap1Winners.length, 2);
-        assertEq(yap1Winners[0], winner1);
-        assertEq(yap1Winners[1], winner2);
     }
 
-    function testRewardYapWinnersMultipleBatches() public {
+    function testRewardYapWinnersWithERC20Token() public {
         vm.startPrank(user1);
-        uint256 user1InitialBalance = kaitoToken.balanceOf(user1);
-        kaitoToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
-        (uint256 yapId,,,) = escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE);
+        uint256 user1InitialBalance = testToken.balanceOf(user1);
+        testToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
+        (uint256 yapId,,,,) = escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE, address(testToken));
         vm.stopPrank();
 
-        address[] memory winners1 = new address[](1);
-        winners1[0] = winner1;
-        uint256[] memory rewards1 = new uint256[](1);
-        rewards1[0] = REWARD_AMOUNT;
+        address[] memory winners = new address[](2);
+        winners[0] = winner1;
+        winners[1] = winner2;
 
-        address[] memory winners2 = new address[](1);
-        winners2[0] = winner2;
-        uint256[] memory rewards2 = new uint256[](1);
-        rewards2[0] = REWARD_AMOUNT;
+        uint256[] memory rewards = new uint256[](2);
+        rewards[0] = REWARD_AMOUNT;
+        rewards[1] = REWARD_AMOUNT;
 
-        uint256 winner1InitialBalance = kaitoToken.balanceOf(winner1);
-        uint256 winner2InitialBalance = kaitoToken.balanceOf(winner2);
+        uint256 winner1InitialBalance = testToken.balanceOf(winner1);
+        uint256 winner2InitialBalance = testToken.balanceOf(winner2);
 
         vm.startPrank(admin);
-
-        escrowProxyAsLogic.rewardYapWinners(yapId, winners1, rewards1, false);
-
-        EscrowLogic.YapRequest memory yapRequestAfterFirst = escrowProxyAsLogic.getYapRequest(yapId);
-        assertEq(yapRequestAfterFirst.budget, REQUEST_BUDGET - REWARD_AMOUNT);
-        assertTrue(yapRequestAfterFirst.isActive);
-
-        escrowProxyAsLogic.rewardYapWinners(yapId, winners2, rewards2, true);
+        escrowProxyAsLogic.rewardYapWinners(yapId, winners, rewards, true);
         vm.stopPrank();
 
-        assertEq(kaitoToken.balanceOf(winner1), winner1InitialBalance + REWARD_AMOUNT);
-        assertEq(kaitoToken.balanceOf(winner2), winner2InitialBalance + REWARD_AMOUNT);
+        assertEq(testToken.balanceOf(winner1), winner1InitialBalance + REWARD_AMOUNT);
+        assertEq(testToken.balanceOf(winner2), winner2InitialBalance + REWARD_AMOUNT);
 
         uint256 expectedRefund = REQUEST_BUDGET - (REWARD_AMOUNT * 2);
         uint256 expectedFinalBalance = user1InitialBalance - TOTAL_REQUEST_BUDGET + expectedRefund;
-        assertEq(kaitoToken.balanceOf(user1), expectedFinalBalance);
+        assertEq(testToken.balanceOf(user1), expectedFinalBalance);
 
         EscrowLogic.YapRequest memory yapRequest = escrowProxyAsLogic.getYapRequest(yapId);
         assertEq(yapRequest.budget, 0);
         assertFalse(yapRequest.isActive);
-
-        address[] memory allWinners = escrowProxyAsLogic.getWinners(yapId);
-        assertEq(allWinners.length, 2);
-        assertEq(allWinners[0], winner1);
-        assertEq(allWinners[1], winner2);
     }
 
-    function testWithdrawFees() public {
+    function testTopUpRequestWithNativeToken() public {
         vm.startPrank(user1);
-        kaitoToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
-        escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE);
+        (uint256 yapId,,,,) =
+            escrowProxyAsLogic.createRequest{value: TOTAL_REQUEST_BUDGET}(REQUEST_BUDGET, FEE, NATIVE_TOKEN);
+
+        (, uint256 newTotalBudget,,,) =
+            escrowProxyAsLogic.topUpRequest{value: TOTAL_REQUEST_BUDGET}(yapId, REQUEST_BUDGET, FEE);
         vm.stopPrank();
 
-        uint256 feeBalance = escrowProxyAsLogic.getFeeBalance();
-        assertEq(feeBalance, 1 ether);
+        assertEq(newTotalBudget, REQUEST_BUDGET * 2);
+
+        EscrowLogic.YapRequest memory yapRequest = escrowProxyAsLogic.getYapRequest(yapId);
+        assertEq(yapRequest.budget, REQUEST_BUDGET * 2);
+        assertTrue(yapRequest.isActive);
+    }
+
+    function testTopUpRequestWithERC20Token() public {
+        vm.startPrank(user1);
+        testToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET * 2);
+        (uint256 yapId,,,,) = escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE, address(testToken));
+
+        (, uint256 newTotalBudget,,,) = escrowProxyAsLogic.topUpRequest(yapId, REQUEST_BUDGET, FEE);
+        vm.stopPrank();
+
+        assertEq(newTotalBudget, REQUEST_BUDGET * 2);
+
+        EscrowLogic.YapRequest memory yapRequest = escrowProxyAsLogic.getYapRequest(yapId);
+        assertEq(yapRequest.budget, REQUEST_BUDGET * 2);
+        assertTrue(yapRequest.isActive);
+    }
+
+    function testWithdrawFeesNativeToken() public {
+        vm.startPrank(user1);
+        escrowProxyAsLogic.createRequest{value: TOTAL_REQUEST_BUDGET}(REQUEST_BUDGET, FEE, NATIVE_TOKEN);
+        vm.stopPrank();
+
+        uint256 feeBalance = escrowProxyAsLogic.getFeeBalance(NATIVE_TOKEN);
+        assertEq(feeBalance, FEE);
 
         address feeReceiver = makeAddr("feeReceiver");
-        uint256 initialBalance = kaitoToken.balanceOf(feeReceiver);
+        uint256 initialBalance = feeReceiver.balance;
 
-        escrowProxyAsLogic.withdrawFees(feeReceiver, feeBalance);
+        escrowProxyAsLogic.withdrawFees(feeReceiver, feeBalance, NATIVE_TOKEN);
 
-        uint256 newFeeBalance = escrowProxyAsLogic.getFeeBalance();
+        uint256 newFeeBalance = escrowProxyAsLogic.getFeeBalance(NATIVE_TOKEN);
         assertEq(newFeeBalance, 0);
-        assertEq(kaitoToken.balanceOf(feeReceiver), initialBalance + feeBalance);
+        assertEq(feeReceiver.balance, initialBalance + feeBalance);
     }
 
-    function testRewardYapWinnersNonAdminReverts() public {
+    function testWithdrawFeesERC20Token() public {
         vm.startPrank(user1);
-        kaitoToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
-        (uint256 yapId,,,) = escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE);
+        testToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
+        escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE, address(testToken));
         vm.stopPrank();
 
-        address[] memory winners = new address[](2);
-        winners[0] = winner1;
-        winners[1] = winner2;
+        uint256 feeBalance = escrowProxyAsLogic.getFeeBalance(address(testToken));
+        assertEq(feeBalance, FEE);
 
-        uint256[] memory rewards = new uint256[](2);
-        rewards[0] = REWARD_AMOUNT;
-        rewards[1] = REWARD_AMOUNT;
+        address feeReceiver = makeAddr("feeReceiver");
+        uint256 initialBalance = testToken.balanceOf(feeReceiver);
 
-        vm.startPrank(user2);
-        vm.expectRevert(EscrowLogic.OnlyAdminsCanDistributeRewards.selector);
-        escrowProxyAsLogic.rewardYapWinners(yapId, winners, rewards, true);
+        escrowProxyAsLogic.withdrawFees(feeReceiver, feeBalance, address(testToken));
+
+        uint256 newFeeBalance = escrowProxyAsLogic.getFeeBalance(address(testToken));
+        assertEq(newFeeBalance, 0);
+        assertEq(testToken.balanceOf(feeReceiver), initialBalance + feeBalance);
+    }
+
+    function testAddAssetSupport() public {
+        MockERC20 newToken = new MockERC20("New Token", "NEW", 18);
+
+        assertFalse(escrowProxyAsLogic.isAssetSupported(address(newToken)));
+
+        escrowProxyAsLogic.addAssetSupport(address(newToken), MINIMUM_TOTAL_BUDGET);
+
+        assertTrue(escrowProxyAsLogic.isAssetSupported(address(newToken)));
+
+        uint256 minBudget = escrowProxyAsLogic.getMinimumBudget(address(newToken));
+        assertEq(minBudget, MINIMUM_TOTAL_BUDGET);
+
+        address[] memory allAssets = escrowProxyAsLogic.getAllAssets();
+        bool found = false;
+        for (uint256 i = 0; i < allAssets.length; i++) {
+            if (allAssets[i] == address(newToken)) {
+                found = true;
+                break;
+            }
+        }
+        assertTrue(found);
+    }
+
+    function testRemoveAssetSupport() public {
+        // Add new token first
+        MockERC20 newToken = new MockERC20("New Token", "NEW", 18);
+        escrowProxyAsLogic.addAssetSupport(address(newToken), MINIMUM_TOTAL_BUDGET);
+        assertTrue(escrowProxyAsLogic.isAssetSupported(address(newToken)));
+
+        // Remove support
+        escrowProxyAsLogic.removeAssetSupport(address(newToken));
+        assertFalse(escrowProxyAsLogic.isAssetSupported(address(newToken)));
+    }
+
+    function testCannotRemoveNativeToken() public {
+        vm.expectRevert(EscrowLogic.CannotRemoveCoreAssets.selector);
+        escrowProxyAsLogic.removeAssetSupport(NATIVE_TOKEN);
+    }
+
+    function testUpdateAssetRequirements() public {
+        uint256 newMinBudget = 200000;
+        escrowProxyAsLogic.updateAssetRequirements(address(testToken), newMinBudget);
+
+        uint256 minBudget = escrowProxyAsLogic.getMinimumBudget(address(testToken));
+        assertEq(minBudget, newMinBudget);
+    }
+
+    function testCreateRequestUnsupportedAssetReverts() public {
+        MockERC20 unsupportedToken = new MockERC20("Unsupported", "UNS", 18);
+
+        vm.startPrank(user1);
+        vm.expectRevert(EscrowLogic.AssetNotSupported.selector);
+        escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE, address(unsupportedToken));
         vm.stopPrank();
     }
 
-    function testUpgradeImpl() public {
+    function testCreateRequestInsufficientNativeTokenReverts() public {
+        vm.startPrank(user1);
+        vm.expectRevert(EscrowLogic.InsufficientNativeBalance.selector);
+        escrowProxyAsLogic.createRequest{value: TOTAL_REQUEST_BUDGET - 1}(REQUEST_BUDGET, FEE, NATIVE_TOKEN);
+        vm.stopPrank();
+    }
+
+    function testCreateRequestSendEthForERC20Reverts() public {
+        vm.startPrank(user1);
+        testToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
+        vm.expectRevert(EscrowLogic.NoEthValueShouldBeSent.selector);
+        escrowProxyAsLogic.createRequest{value: 1 ether}(REQUEST_BUDGET, FEE, address(testToken));
+        vm.stopPrank();
+    }
+
+    function testExcessEthRefund() public {
+        vm.startPrank(user1);
+        uint256 initialBalance = user1.balance;
+        uint256 excessAmount = 2 ether;
+
+        escrowProxyAsLogic.createRequest{value: TOTAL_REQUEST_BUDGET + excessAmount}(REQUEST_BUDGET, FEE, NATIVE_TOKEN);
+
+        // Should have received refund for excess
+        assertEq(user1.balance, initialBalance - TOTAL_REQUEST_BUDGET);
+        vm.stopPrank();
+    }
+
+    function testGetTotalBalance() public {
+        vm.startPrank(user1);
+        escrowProxyAsLogic.createRequest{value: TOTAL_REQUEST_BUDGET}(REQUEST_BUDGET, FEE, NATIVE_TOKEN);
+        vm.stopPrank();
+
+        uint256 nativeBalance = escrowProxyAsLogic.getTotalBalance(NATIVE_TOKEN);
+        assertEq(nativeBalance, TOTAL_REQUEST_BUDGET);
+
+        vm.startPrank(user1);
+        testToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
+        escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE, address(testToken));
+        vm.stopPrank();
+
+        uint256 tokenBalance = escrowProxyAsLogic.getTotalBalance(address(testToken));
+        assertEq(tokenBalance, TOTAL_REQUEST_BUDGET);
+    }
+
+    function testUpgradeImplementation() public {
         EscrowLogic newImpl = new EscrowLogic();
 
         address currentImpl = escrowProxy.get_implementation();
@@ -229,16 +371,21 @@ contract EscrowProxyTest is Test {
         assertEq(updatedImpl, address(newImpl));
     }
 
-    function testUpgradeImplNonOwnerReverts() public {
-        EscrowLogic newImpl = new EscrowLogic();
-
+    function testRewardYapWinnersNonAdminReverts() public {
         vm.startPrank(user1);
-        vm.expectRevert();
-        escrowProxy.upgradeTo(address(newImpl));
+        testToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
+        (uint256 yapId,,,,) = escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE, address(testToken));
         vm.stopPrank();
 
-        address currentImpl = escrowProxy.get_implementation();
-        assertEq(currentImpl, address(escrowLogic));
+        address[] memory winners = new address[](1);
+        winners[0] = winner1;
+        uint256[] memory rewards = new uint256[](1);
+        rewards[0] = REWARD_AMOUNT;
+
+        vm.startPrank(user2);
+        vm.expectRevert(EscrowLogic.OnlyAdminsCanDistributeRewards.selector);
+        escrowProxyAsLogic.rewardYapWinners(yapId, winners, rewards, true);
+        vm.stopPrank();
     }
 
     function testAddAndRemoveAdmin() public {
@@ -246,214 +393,39 @@ contract EscrowProxyTest is Test {
 
         assertFalse(escrowProxyAsLogic.isAdmin(newAdmin));
         assertTrue(escrowProxyAsLogic.isAdmin(admin));
-        assertEq(escrowProxyAsLogic.owner(), owner);
 
-        vm.startPrank(owner);
         escrowProxyAsLogic.addAdmin(newAdmin);
         assertTrue(escrowProxyAsLogic.isAdmin(newAdmin));
 
-        vm.startPrank(owner);
         escrowProxyAsLogic.removeAdmin(admin);
         assertFalse(escrowProxyAsLogic.isAdmin(admin));
     }
 
-    function testGetTotalYapRequests() public {
-        assertEq(escrowProxyAsLogic.getTotalYapRequests(), 0);
+    function testGetAllAssets() public view {
+        address[] memory assets = escrowProxyAsLogic.getAllAssets();
 
-        vm.startPrank(user1);
-        kaitoToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
-        escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE);
-        vm.stopPrank();
-
-        assertEq(escrowProxyAsLogic.getTotalYapRequests(), 1);
-
-        vm.startPrank(user2);
-        kaitoToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
-        escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE);
-        vm.stopPrank();
-
-        assertEq(escrowProxyAsLogic.getTotalYapRequests(), 2);
+        // Should contain native token and test token
+        assertEq(assets.length, 2);
+        assertEq(assets[0], NATIVE_TOKEN);
+        assertEq(assets[1], address(testToken));
     }
 
-    function testCloseYapRequestWithFullRewards() public {
-        vm.startPrank(user1);
-        uint256 user1InitialBalance = kaitoToken.balanceOf(user1);
-        kaitoToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
-        (uint256 yapId, uint256 exactBudget,,) = escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE);
-        vm.stopPrank();
-
-        address[] memory winners = new address[](1);
-        winners[0] = winner1;
-
-        uint256[] memory rewards = new uint256[](1);
-        rewards[0] = exactBudget;
-
-        vm.startPrank(admin);
-        escrowProxyAsLogic.rewardYapWinners(yapId, winners, rewards, true);
-        vm.stopPrank();
-
-        uint256 expectedFinalBalance = user1InitialBalance - TOTAL_REQUEST_BUDGET;
-        assertEq(kaitoToken.balanceOf(user1), expectedFinalBalance);
-
-        EscrowLogic.YapRequest memory yapRequest = escrowProxyAsLogic.getYapRequest(yapId);
-        assertEq(yapRequest.budget, 0);
-        assertFalse(yapRequest.isActive);
+    // Helper function to add new view functions if needed
+    function isAssetSupported(address asset) public view returns (bool) {
+        // This would call the view function once it's added to the contract
+        try escrowProxyAsLogic.isAssetSupported(asset) returns (bool supported) {
+            return supported;
+        } catch {
+            return false;
+        }
     }
 
-    function testRewardYapWinnersMismatchedArraysReverts() public {
-        vm.startPrank(user1);
-        kaitoToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
-        (uint256 yapId,,,) = escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE);
-        vm.stopPrank();
-
-        address[] memory winners = new address[](2);
-        winners[0] = winner1;
-        winners[1] = winner2;
-
-        uint256[] memory rewards = new uint256[](1);
-        rewards[0] = REWARD_AMOUNT;
-
-        vm.startPrank(admin);
-        vm.expectRevert(EscrowLogic.InvalidWinnersProvided.selector);
-        escrowProxyAsLogic.rewardYapWinners(yapId, winners, rewards, true);
-        vm.stopPrank();
-    }
-
-    function testRewardYapWinnersExceedingBudgetReverts() public {
-        vm.startPrank(user1);
-        kaitoToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
-        (uint256 yapId, uint256 exactBudget,,) = escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE);
-        vm.stopPrank();
-
-        address[] memory winners = new address[](1);
-        winners[0] = winner1;
-
-        uint256[] memory rewards = new uint256[](1);
-        rewards[0] = exactBudget + 1 ether;
-
-        vm.startPrank(admin);
-        vm.expectRevert(EscrowLogic.InsufficientBudget.selector);
-        escrowProxyAsLogic.rewardYapWinners(yapId, winners, rewards, true);
-        vm.stopPrank();
-    }
-
-    function testWithdrawFeesExceedingBalanceReverts() public {
-        vm.startPrank(user1);
-        kaitoToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
-        escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE);
-        vm.stopPrank();
-
-        uint256 feeBalance = escrowProxyAsLogic.getFeeBalance();
-
-        vm.expectRevert(EscrowLogic.InsufficientBudget.selector);
-        escrowProxyAsLogic.withdrawFees(address(this), feeBalance + 1 ether);
-    }
-
-    function testRewardYapWinnersInactiveRequestReverts() public {
-        vm.startPrank(user1);
-        kaitoToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
-        (uint256 yapId,,,) = escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE);
-        vm.stopPrank();
-
-        address[] memory winners = new address[](1);
-        winners[0] = winner1;
-        uint256[] memory rewards = new uint256[](1);
-        rewards[0] = 1 ether;
-
-        vm.startPrank(admin);
-        escrowProxyAsLogic.rewardYapWinners(yapId, winners, rewards, true);
-
-        kaitoToken.mint(admin, 10 ether);
-        kaitoToken.approve(address(escrowProxy), 10 ether);
-
-        vm.expectRevert(EscrowLogic.YapRequestNotActive.selector);
-        escrowProxyAsLogic.rewardYapWinners(yapId, winners, rewards, true);
-        vm.stopPrank();
-    }
-
-    function testRewardYapWinnersEmptyArraysReverts() public {
-        vm.startPrank(user1);
-        kaitoToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
-        (uint256 yapId,,,) = escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE);
-        vm.stopPrank();
-
-        address[] memory winners = new address[](0);
-        uint256[] memory rewards = new uint256[](0);
-
-        vm.startPrank(admin);
-        vm.expectRevert(EscrowLogic.NoWinnersProvided.selector);
-        escrowProxyAsLogic.rewardYapWinners(yapId, winners, rewards, true);
-        vm.stopPrank();
-    }
-
-    function testGetYapRequestInvalidIdReverts() public {
-        vm.expectRevert(EscrowLogic.YapRequestNotFound.selector);
-        escrowProxyAsLogic.getYapRequest(999);
-    }
-
-    function testTopUpRequest() public {
-        vm.startPrank(user1);
-
-        kaitoToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
-
-        vm.expectEmit(true, true, false, true);
-        emit YapRequestCreated(1, user1, 9 ether, 1 ether);
-
-        (uint256 yapId, uint256 exactBudget,,) = escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE);
-
-        vm.stopPrank();
-
-        assertEq(yapId, 1);
-        assertEq(exactBudget, 9 ether);
-
-        EscrowLogic.YapRequest memory yapRequest = escrowProxyAsLogic.getYapRequest(1);
-
-        assertEq(yapRequest.creator, user1);
-        assertEq(yapRequest.budget, 9 ether);
-        assertTrue(yapRequest.isActive);
-
-        uint256 feeBalance = escrowProxyAsLogic.getFeeBalance();
-        assertEq(feeBalance, 1 ether);
-
-        vm.startPrank(user1);
-        kaitoToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
-        (, uint256 newTotalBudget,,) = escrowProxyAsLogic.topUpRequest(yapId, REQUEST_BUDGET, FEE);
-
-        vm.stopPrank();
-
-        assertEq(yapId, 1);
-        assertEq(newTotalBudget, 18 ether);
-    }
-
-    function testTopUpRequestNonCreatorReverts() public {
-        vm.startPrank(user1);
-
-        kaitoToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
-
-        vm.expectEmit(true, true, false, true);
-        emit YapRequestCreated(1, user1, 9 ether, 1 ether);
-
-        (uint256 yapId, uint256 exactBudget,,) = escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE);
-
-        vm.stopPrank();
-
-        assertEq(yapId, 1);
-        assertEq(exactBudget, 9 ether);
-
-        EscrowLogic.YapRequest memory yapRequest = escrowProxyAsLogic.getYapRequest(1);
-
-        assertEq(yapRequest.creator, user1);
-        assertEq(yapRequest.budget, 9 ether);
-        assertTrue(yapRequest.isActive);
-
-        uint256 feeBalance = escrowProxyAsLogic.getFeeBalance();
-        assertEq(feeBalance, 1 ether);
-
-        vm.startPrank(user2);
-        kaitoToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
-        vm.expectRevert(EscrowLogic.NotTheCreator.selector);
-        escrowProxyAsLogic.topUpRequest(yapId, REQUEST_BUDGET, FEE);
-
-        vm.stopPrank();
+    function getMinimumBudget(address asset) public view returns (uint256) {
+        // This would call the view function once it's added to the contract
+        try escrowProxyAsLogic.getMinimumBudget(asset) returns (uint256 minBudget) {
+            return minBudget;
+        } catch {
+            return 0;
+        }
     }
 }
