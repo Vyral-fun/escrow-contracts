@@ -113,6 +113,14 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
         return (s_yapRequestCount, _budget, _fee, msg.sender);
     }
 
+    /**
+     * @notice Top up an existing yap request with additional budget and fee
+     * @param yapRequestId The ID of the yap request to top up
+     * @param additionalBudget The additional budget to add to the yap request
+     * @param additionalFee The additional fee to add to the yap request
+     * @dev The total budget (additionalBudget + additionalFee) must be greater than the minimum budget for the asset
+     * @return The updated yap request details
+     */
     function topUpRequest(uint256 yapRequestId, uint256 additionalBudget, uint256 additionalFee)
         external
         payable
