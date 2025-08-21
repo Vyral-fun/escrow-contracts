@@ -19,7 +19,6 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
     uint256 private MINIMUM_FEE = 500;
     uint256 private MINIMUM_BUDGET = 45000;
 
-
     uint256[50] private __gap;
 
     struct YapRequest {
@@ -340,7 +339,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
      * @notice Gets the network chain ID
      * @return The current network chain ID
      */
-    function getNetworkChainId() external view returns (uint32, uint32, uint256) {
+    function getNetworkChainId() external view returns (uint32, uint256) {
         uint32 chainid = uint32(NETWORK_CHAIN_ID & 0xFFF);
         return (chainid, NETWORK_CHAIN_ID);
     }
