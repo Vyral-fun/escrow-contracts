@@ -12,7 +12,7 @@
 
 ### Monad Testnet (Staging)
 
-- Escrow: 0xC0015ace24aa369A842fc89855e03bdEB94b965f
+- Escrow: 0x30C932752b410b2C4191d139DdC928970A982254
 
 ## Foundry
 
