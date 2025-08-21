@@ -10,36 +10,38 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
 
-    uint256 private s_yapRequestCount;
+    uint32 private s_yapRequestCount;
     uint256 private s_feeBalance;
-    mapping(uint256 => YapRequest) private s_yapRequests;
-    mapping(uint256 => address[]) private s_yapWinners;
+    mapping(uint32 => YapRequest) private s_yapRequests;
+    mapping(uint32 => address[]) private s_yapWinners;
     mapping(address => bool) private s_is_admin;
-    uint256 private MINIMUM_FEE = 500000000000000000000;
-    uint256 private MINIMUM_BUDGET = 4500000000000000000000;
+    uint256 private NETWORK_CHAIN_ID;
+    uint256 private MINIMUM_FEE = 500;
+    uint256 private MINIMUM_BUDGET = 45000;
+
 
     uint256[50] private __gap;
 
     struct YapRequest {
-        uint256 yapId;
+        uint32 yapId;
         address creator;
         uint256 budget;
         bool isActive;
     }
 
-    event YapRequestCreated(uint256 indexed yapId, address indexed creator, uint256 budget, uint256 fee);
-    event Initialized(address[] admins, uint256 currentYapRequestCount, address owner);
-    event Claimed(uint256 indexed yapId, address winner, uint256 amount);
+    event YapRequestCreated(uint32 indexed yapId, address indexed creator, uint256 budget, uint256 fee);
+    event Initialized(address[] admins, uint32 currentYapRequestCount, address owner);
+    event Claimed(uint32 indexed yapId, address winner, uint256 amount);
     event AdminAdded(address indexed admin, address indexed addedBy);
     event AdminRemoved(address indexed admin, address indexed removedBy);
-    event RewardsDistributed(uint256 indexed yapRequestId, address[] winners, uint256 totalReward);
+    event RewardsDistributed(uint32 indexed yapRequestId, address[] winners, uint256 totalReward);
     event FeesWithdrawn(address indexed to, uint256 amount);
-    event CreatorRefunded(uint256 indexed yapRequestId, address creator, uint256 budgetLeft);
-    event YapRequestCountReset(uint256 newYapRequestCount);
+    event CreatorRefunded(uint32 indexed yapRequestId, address creator, uint256 budgetLeft);
+    event YapRequestCountReset(uint32 newYapRequestCount);
     event MinimumFeeReset(uint256 newMinimumFee);
     event MinimumBudgetReset(uint256 newMinimumBudget);
     event YapRequestTopUp(
-        uint256 indexed yapId, address indexed creator, uint256 additionalBudget, uint256 additionalFee
+        uint32 indexed yapId, address indexed creator, uint256 additionalBudget, uint256 additionalFee
     );
 
     error OnlyAdminsCanDistributeRewards();
@@ -59,7 +61,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
         _disableInitializers();
     }
 
-    function initialize(address[] memory _admins, uint256 _currentYapRequestCount, address initialOwner)
+    function initialize(address[] memory _admins, uint32 _currentYapRequestCount, address initialOwner)
         public
         initializer
     {
@@ -68,6 +70,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
         _transferOwnership(initialOwner);
         s_yapRequestCount = _currentYapRequestCount;
         s_is_admin[msg.sender] = true;
+        NETWORK_CHAIN_ID = block.chainid;
 
         for (uint256 i = 0; i < _admins.length; i++) {
             s_is_admin[_admins[i]] = true;
@@ -88,7 +91,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
         external
         payable
         nonReentrant
-        returns (uint256, uint256, uint256, address)
+        returns (uint32, uint256, uint256, address)
     {
         if (_budget == 0 || _budget < MINIMUM_BUDGET) {
             revert BudgetMustBeGreaterThanZero();
@@ -104,13 +107,14 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
         }
 
         s_yapRequestCount += 1;
-        s_yapRequests[s_yapRequestCount] =
-            YapRequest({yapId: s_yapRequestCount, creator: msg.sender, budget: _budget, isActive: true});
+        uint32 escrowYapId = (uint32(NETWORK_CHAIN_ID) << 20) | uint32(s_yapRequestCount);
+        s_yapRequests[escrowYapId] =
+            YapRequest({yapId: escrowYapId, creator: msg.sender, budget: _budget, isActive: true});
 
         s_feeBalance += _fee;
-        emit YapRequestCreated(s_yapRequestCount, msg.sender, _budget, _fee);
+        emit YapRequestCreated(escrowYapId, msg.sender, _budget, _fee);
 
-        return (s_yapRequestCount, _budget, _fee, msg.sender);
+        return (escrowYapId, _budget, _fee, msg.sender);
     }
 
     /**
@@ -121,7 +125,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
      * @dev The total budget (additionalBudget + additionalFee) must be greater than the minimum budget for the asset
      * @return The updated yap request details
      */
-    function topUpRequest(uint256 yapRequestId, uint256 additionalBudget, uint256 additionalFee)
+    function topUpRequest(uint32 yapRequestId, uint256 additionalBudget, uint256 additionalFee)
         external
         payable
         nonReentrant
@@ -170,7 +174,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
      * @param isLastBatch Indicates if this is the last batch of winners
      */
     function rewardYapWinners(
-        uint256 yapRequestId,
+        uint32 yapRequestId,
         address[] calldata winners,
         uint256[] calldata winnersRewards,
         bool isLastBatch
@@ -248,15 +252,15 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
 
     /**
      * @notice Resets the yap request count
-     * @param newYapRequstCount The new yap request count
+     * @param newYapRequestCount The new yap request count
      */
-    function resetYapRequestCount(uint256 newYapRequstCount) external onlyOwner {
-        if (newYapRequstCount == 0) {
+    function resetYapRequestCount(uint32 newYapRequestCount) external onlyOwner {
+        if (newYapRequestCount == 0) {
             revert InvalidYapRequestId();
         }
-        s_yapRequestCount = newYapRequstCount;
+        s_yapRequestCount = newYapRequestCount;
 
-        emit YapRequestCountReset(newYapRequstCount);
+        emit YapRequestCountReset(newYapRequestCount);
     }
 
     /**
@@ -308,7 +312,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
      * @param yapRequestId The ID of the yap request
      * @return The yap request details
      */
-    function getYapRequest(uint256 yapRequestId) external view returns (YapRequest memory) {
+    function getYapRequest(uint32 yapRequestId) external view returns (YapRequest memory) {
         YapRequest memory yapRequest = s_yapRequests[yapRequestId];
         if (yapRequest.yapId == 0) {
             revert YapRequestNotFound();
@@ -328,12 +332,30 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
      * @notice Gets the winners for yap requests
      * @return Array of the winners of a yap requests
      */
-    function getWinners(uint256 yapRequestId) external view returns (address[] memory) {
+    function getWinners(uint32 yapRequestId) external view returns (address[] memory) {
         return s_yapWinners[yapRequestId];
     }
 
     /**
-     * @notice Checks if an address is an admin
+     * @notice Gets the network chain ID
+     * @return The current network chain ID
+     */
+    function getNetworkChainId() external view returns (uint32, uint32, uint256) {
+        uint32 chainid = uint32(NETWORK_CHAIN_ID & 0xFFF);
+        return (chainid, NETWORK_CHAIN_ID);
+    }
+
+    /**
+     * @notice Generates a unique yap ID based on the current chain ID and yap request count
+     * @param yapRequestCount The current yap request count
+     * @return The generated yap ID
+     */
+    function getEscrowYapId(uint32 yapRequestCount) external view returns (uint32) {
+        return (uint32(NETWORK_CHAIN_ID) << 20) | uint32(yapRequestCount);
+    }
+
+    /**
+     * @notice Checks if an addreI want it to be u32ss is an admin
      * @return bool indicating if the address is an admin
      */
     function isAdmin(address _address) external view returns (bool) {

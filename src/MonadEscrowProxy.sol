@@ -19,7 +19,7 @@ contract EscrowProxy {
     error ImplementationRequired();
     error InitializationFailed();
 
-    constructor(address _logicImplementation, address[] memory _admins, uint256 _currentYapRequestCount) {
+    constructor(address _logicImplementation, address[] memory _admins, uint32 _currentYapRequestCount) {
         if (_logicImplementation == address(0)) {
             revert ImplementationRequired();
         }
@@ -33,7 +33,7 @@ contract EscrowProxy {
 
         (bool success,) = _logicImplementation.delegatecall(
             abi.encodeWithSignature(
-                "initialize(address[],uint256,address)", _admins, _currentYapRequestCount, msg.sender
+                "initialize(address[],uint32,address)", _admins, _currentYapRequestCount, msg.sender
             )
         );
 
