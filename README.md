@@ -14,6 +14,10 @@
 
 - Escrow: 0x30C932752b410b2C4191d139DdC928970A982254
 
+### Monad Testnet (Prod)
+
+- Escrow: 0x29957e3b3DaBeDBE830b0De53C2C9293d0DB1bda
+
 ## Foundry
 
 **Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
