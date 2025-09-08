@@ -5,6 +5,10 @@
 - Escrow: 0xdcb6256afd4e9bf395B846F9Ee78C7EE9c20Cd2e
 - Kaito: 0xf1966A1d1a6098c80341f38DCE1a54F8D67e8c87
 
+### Base Sepolia Multi Asset(Staging)
+
+- Escrow: 0xbBe10D3b6199B3707d98581FBb13a4266c7e95A0
+
 ### Base Mainnet (Prod)
 
 - Escrow: 0x29957e3b3DaBeDBE830b0De53C2C9293d0DB1bda
