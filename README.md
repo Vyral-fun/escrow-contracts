@@ -8,6 +8,7 @@
 ### Base Sepolia Multi Asset(Staging)
 
 - Escrow: 0xbBe10D3b6199B3707d98581FBb13a4266c7e95A0
+- USDC: 0xd311E0ccC2E34d636c5e32853ab5Bd8aF5dB0050
 
 ### Base Mainnet (Prod)
 
