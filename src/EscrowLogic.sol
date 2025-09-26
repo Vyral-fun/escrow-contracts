@@ -28,6 +28,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
         uint256 yapId;
         address creator;
         uint256 budget;
+        uint256 fee;
         address asset;
         bool isActive;
     }
@@ -38,6 +39,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
     event AdminAdded(address indexed admin, address indexed addedBy);
     event AdminRemoved(address indexed admin, address indexed removedBy);
     event RewardsDistributed(uint256 indexed yapRequestId, address[] winners, uint256 totalReward);
+    event AffiliateRewardFromFees(uint256 indexed yapRequestId, address affiliate, uint256 reward);
     event FeesWithdrawn(address indexed to, uint256 amount, address asset);
     event CreatorRefunded(uint256 indexed yapRequestId, address creator, uint256 budgetLeft);
     event YapRequestCountReset(uint256 newYapRequestCount);
@@ -54,11 +56,14 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
     error NoWinnersProvided();
     error FeeMustBeGreaterThanZero();
     error BudgetMustBeGreaterThanZero();
+    error RewardMustBeGreaterThanZero();
     error YapRequestNotFound();
     error YapRequestNotActive();
     error InvalidYapRequestId();
     error InvalidWinnersProvided();
+    error InvalidAffiliateAddress();
     error InsufficientBudget();
+    error InsufficientFees();
     error NotAdmin();
     error NotTheCreator();
     error AssetNotSupported();
@@ -136,8 +141,14 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
         }
 
         s_yapRequestCount += 1;
-        s_yapRequests[s_yapRequestCount] =
-            YapRequest({yapId: s_yapRequestCount, creator: msg.sender, budget: _budget, asset: _asset, isActive: true});
+        s_yapRequests[s_yapRequestCount] = YapRequest({
+            yapId: s_yapRequestCount,
+            creator: msg.sender,
+            budget: _budget,
+            fee: _fee,
+            asset: _asset,
+            isActive: true
+        });
 
         s_feeBalances[_asset] += _fee;
         emit YapRequestCreated(s_yapRequestCount, msg.sender, _asset, _budget, _fee);
@@ -289,6 +300,48 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
         }
 
         emit RewardsDistributed(yapRequestId, winners, totalReward);
+    }
+
+    /**
+     * @notice Distributes fees rewards to affiliate of a yap campaign
+     * @param yapRequestId The ID of the yap request
+     * @param affiliate affiliate that referred the campaign creator
+     * @param reward reward amounts for the affiliate
+     */
+    function rewardAffiliateFromFees(uint256 yapRequestId, address affiliate, uint256 reward) external nonReentrant {
+        if (!s_is_admin[msg.sender]) {
+            revert OnlyAdminsCanDistributeRewards();
+        }
+
+        if (reward == 0) {
+            revert RewardMustBeGreaterThanZero();
+        }
+
+        if (affiliate == address(0)) {
+            revert InvalidAffiliateAddress();
+        }
+
+        YapRequest memory yapRequest = s_yapRequests[yapRequestId];
+
+        if (yapRequest.yapId == 0) {
+            revert InvalidYapRequestId();
+        }
+
+        if (reward > yapRequest.fee) {
+            revert InsufficientFees();
+        }
+
+        s_yapRequests[yapRequestId].fee -= reward;
+        if (yapRequest.asset == NATIVE_TOKEN) {
+            (bool success,) = payable(affiliate).call{value: reward}("");
+            if (!success) {
+                revert NativeTransferFailed();
+            }
+        } else {
+            IERC20(yapRequest.asset).safeTransfer(affiliate, reward);
+        }
+
+        emit AffiliateRewardFromFees(yapRequestId, affiliate, reward);
     }
 
     /**
