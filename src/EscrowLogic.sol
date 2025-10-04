@@ -22,8 +22,6 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
 
     mapping(address => uint256) private s_minimumTotalBudget; // minimum budget per token
 
-    uint256[50] private __gap;
-
     struct YapRequest {
         uint256 yapId;
         address creator;
@@ -32,6 +30,8 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
         address asset;
         bool isActive;
     }
+
+    uint256[50] private __gap;
 
     event YapRequestCreated(uint256 indexed yapId, address indexed creator, address asset, uint256 budget, uint256 fee);
     event Initialized(address[] admins);
@@ -84,6 +84,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
         __Ownable2Step_init();
 
         _transferOwnership(initialOwner);
+        __ReentrancyGuard_init();
         s_yapRequestCount = _currentYapRequestCount;
         s_is_admin[msg.sender] = true;
 
@@ -130,7 +131,10 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
             }
 
             if (msg.value > total) {
-                payable(msg.sender).transfer(msg.value - total); // Refund excess
+                (bool success,) = payable(msg.sender).call{value: msg.value - total}("");
+                if (!success) {
+                    revert NativeTransferFailed();
+                }
             }
         } else {
             if (msg.value > 0) {
@@ -202,7 +206,10 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
             }
 
             if (msg.value > total) {
-                payable(msg.sender).transfer(msg.value - total); // Refund excess
+                (bool success,) = payable(msg.sender).call{value: msg.value - total}("");
+                if (!success) {
+                    revert NativeTransferFailed();
+                }
             }
         } else {
             if (msg.value > 0) {
@@ -214,6 +221,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
 
         s_feeBalances[asset] += additionalFee;
         yapRequest.budget += additionalBudget;
+        yapRequest.fee += additionalFee;
 
         emit YapRequestTopUp(yapRequest.yapId, yapRequest.creator, additionalBudget, additionalFee, asset);
 
@@ -332,6 +340,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
         }
 
         s_yapRequests[yapRequestId].fee -= reward;
+        s_feeBalances[yapRequest.asset] -= reward;
         if (yapRequest.asset == NATIVE_TOKEN) {
             (bool success,) = payable(affiliate).call{value: reward}("");
             if (!success) {
