@@ -1,21 +1,10 @@
 ## Contract Addresses
 
-### Base Sepolia (Staging)
-
-- Escrow: 0xdcb6256afd4e9bf395B846F9Ee78C7EE9c20Cd2e
-- Kaito: 0xf1966A1d1a6098c80341f38DCE1a54F8D67e8c87
-
 ### Base Sepolia Multi Asset(Staging) and AffiliateReward
 
-- Escrow: 0x0FCCc4f98A8bDd38BFb0E3184E4f0554B3c59369
+- Escrow: 0x699257452Db6377c13F6ab275c3a7E5FAf290e90
+- Kaito: 0xf1966A1d1a6098c80341f38DCE1a54F8D67e8c87
 - USDC: 0xd311E0ccC2E34d636c5e32853ab5Bd8aF5dB0050
-- AVAIL: 0x38E084778b69C65d2de43B44F04E2C1391a16c61
-- USDT: 0x1F54F51D1B172bF8C66C5c6dB11265FFea342cA5
-
-### Base Mainnet (Prod)
-
-- Escrow: 0x29957e3b3DaBeDBE830b0De53C2C9293d0DB1bda
-- Kaito: 0x98d0baa52b2D063E780DE12F615f963Fe8537553
 
 ### Base Mainnet Multi Asset(Prod) and AffiliateReward
 
