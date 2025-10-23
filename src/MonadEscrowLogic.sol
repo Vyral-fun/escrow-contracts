@@ -19,20 +19,22 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
     uint256 private MINIMUM_FEE = 500;
     uint256 private MINIMUM_BUDGET = 45000;
 
-    uint256[50] private __gap;
-
     struct YapRequest {
         uint32 yapId;
         address creator;
         uint256 budget;
+        uint256 fee;
         bool isActive;
     }
+
+    uint256[50] private __gap;
 
     event YapRequestCreated(uint32 indexed yapId, address indexed creator, uint256 budget, uint256 fee);
     event Initialized(address[] admins, uint32 currentYapRequestCount, address owner);
     event Claimed(uint32 indexed yapId, address winner, uint256 amount);
     event AdminAdded(address indexed admin, address indexed addedBy);
     event AdminRemoved(address indexed admin, address indexed removedBy);
+    event AffiliateRewardFromFees(uint256 indexed yapRequestId, address affiliate, uint256 reward);
     event RewardsDistributed(uint32 indexed yapRequestId, address[] winners, uint256 totalReward);
     event FeesWithdrawn(address indexed to, uint256 amount);
     event CreatorRefunded(uint32 indexed yapRequestId, address creator, uint256 budgetLeft);
@@ -55,6 +57,10 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
     error InsufficientBudget();
     error NotAdmin();
     error NotTheCreator();
+    error InsufficientFees();
+    error InvalidAffiliateAddress();
+    error RewardMustBeGreaterThanZero();
+    error NativeTransferFailed();
 
     constructor() {
         _disableInitializers();
@@ -108,7 +114,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
         s_yapRequestCount += 1;
         uint32 escrowYapId = (uint32(NETWORK_CHAIN_ID) << 20) | uint32(s_yapRequestCount);
         s_yapRequests[escrowYapId] =
-            YapRequest({yapId: escrowYapId, creator: msg.sender, budget: _budget, isActive: true});
+            YapRequest({yapId: escrowYapId, creator: msg.sender, budget: _budget, fee: _fee, isActive: true});
 
         s_feeBalance += _fee;
         emit YapRequestCreated(escrowYapId, msg.sender, _budget, _fee);
@@ -216,14 +222,18 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
         for (uint256 i = 0; i < winnerslength; i++) {
             s_yapWinners[yapRequestId].push(winners[i]);
             (bool sent,) = winners[i].call{value: winnersRewards[i]}("");
-            require(sent, "Failed to send Ether");
+            if (!sent) {
+                revert NativeTransferFailed();
+            }
         }
 
         if (isLastBatch) {
             uint256 budgetLeft = s_yapRequests[yapRequestId].budget;
             if (budgetLeft > 0) {
                 (bool sent,) = yapRequest.creator.call{value: budgetLeft}("");
-                require(sent, "Failed to send Ether");
+                if (!sent) {
+                    revert NativeTransferFailed();
+                }
 
                 emit CreatorRefunded(yapRequestId, yapRequest.creator, budgetLeft);
             }
@@ -233,6 +243,45 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
         }
 
         emit RewardsDistributed(yapRequestId, winners, totalReward);
+    }
+
+    /**
+     * @notice Distributes fees rewards to affiliate of a yap campaign
+     * @param yapRequestId The ID of the yap request
+     * @param affiliate affiliate that referred the campaign creator
+     * @param reward reward amounts for the affiliate
+     */
+    function rewardAffiliateFromFees(uint32 yapRequestId, address affiliate, uint256 reward) external nonReentrant {
+        if (!s_is_admin[msg.sender]) {
+            revert OnlyAdminsCanDistributeRewards();
+        }
+
+        if (reward == 0) {
+            revert RewardMustBeGreaterThanZero();
+        }
+
+        if (affiliate == address(0)) {
+            revert InvalidAffiliateAddress();
+        }
+
+        YapRequest memory yapRequest = s_yapRequests[yapRequestId];
+
+        if (yapRequest.yapId == 0) {
+            revert InvalidYapRequestId();
+        }
+
+        if (reward > yapRequest.fee) {
+            revert InsufficientFees();
+        }
+
+        s_yapRequests[yapRequestId].fee -= reward;
+
+        (bool success,) = payable(affiliate).call{value: reward}("");
+        if (!success) {
+            revert NativeTransferFailed();
+        }
+
+        emit AffiliateRewardFromFees(yapRequestId, affiliate, reward);
     }
 
     /**
