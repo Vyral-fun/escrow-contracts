@@ -7,7 +7,22 @@
     },
     {
       "inputs": [],
+      "name": "AssetAlreadySupported",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "AssetNotSupported",
+      "type": "error"
+    },
+    {
+      "inputs": [],
       "name": "BudgetMustBeGreaterThanZero",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "CannotRemoveCoreAssets",
       "type": "error"
     },
     {
@@ -27,17 +42,17 @@
     },
     {
       "inputs": [],
+      "name": "InsufficientNativeBalance",
+      "type": "error"
+    },
+    {
+      "inputs": [],
       "name": "InvalidAffiliateAddress",
       "type": "error"
     },
     {
       "inputs": [],
       "name": "InvalidInitialization",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "InvalidValue",
       "type": "error"
     },
     {
@@ -53,6 +68,11 @@
     {
       "inputs": [],
       "name": "NativeTransferFailed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NoEthValueShouldBeSent",
       "type": "error"
     },
     {
@@ -110,6 +130,17 @@
     {
       "inputs": [],
       "name": "RewardMustBeGreaterThanZero",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        }
+      ],
+      "name": "SafeERC20FailedOperation",
       "type": "error"
     },
     {
@@ -190,9 +221,60 @@
       "inputs": [
         {
           "indexed": true,
-          "internalType": "uint32",
+          "internalType": "address",
+          "name": "asset",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "minimumBudget",
+          "type": "uint256"
+        }
+      ],
+      "name": "AssetAdded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "asset",
+          "type": "address"
+        }
+      ],
+      "name": "AssetRemoved",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "asset",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "minimumBudget",
+          "type": "uint256"
+        }
+      ],
+      "name": "AssetUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
           "name": "yapId",
-          "type": "uint32"
+          "type": "uint256"
         },
         {
           "indexed": false,
@@ -215,9 +297,9 @@
       "inputs": [
         {
           "indexed": true,
-          "internalType": "uint32",
+          "internalType": "uint256",
           "name": "yapRequestId",
-          "type": "uint32"
+          "type": "uint256"
         },
         {
           "indexed": false,
@@ -249,6 +331,12 @@
           "internalType": "uint256",
           "name": "amount",
           "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "asset",
+          "type": "address"
         }
       ],
       "name": "FeesWithdrawn",
@@ -275,18 +363,6 @@
           "internalType": "address[]",
           "name": "admins",
           "type": "address[]"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint32",
-          "name": "currentYapRequestCount",
-          "type": "uint32"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "owner",
-          "type": "address"
         }
       ],
       "name": "Initialized",
@@ -361,9 +437,9 @@
       "inputs": [
         {
           "indexed": true,
-          "internalType": "uint32",
+          "internalType": "uint256",
           "name": "yapRequestId",
-          "type": "uint32"
+          "type": "uint256"
         },
         {
           "indexed": false,
@@ -386,9 +462,9 @@
       "inputs": [
         {
           "indexed": false,
-          "internalType": "uint32",
+          "internalType": "uint256",
           "name": "newYapRequestCount",
-          "type": "uint32"
+          "type": "uint256"
         }
       ],
       "name": "YapRequestCountReset",
@@ -399,14 +475,20 @@
       "inputs": [
         {
           "indexed": true,
-          "internalType": "uint32",
+          "internalType": "uint256",
           "name": "yapId",
-          "type": "uint32"
+          "type": "uint256"
         },
         {
           "indexed": true,
           "internalType": "address",
           "name": "creator",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "asset",
           "type": "address"
         },
         {
@@ -430,9 +512,9 @@
       "inputs": [
         {
           "indexed": true,
-          "internalType": "uint32",
+          "internalType": "uint256",
           "name": "yapId",
-          "type": "uint32"
+          "type": "uint256"
         },
         {
           "indexed": true,
@@ -451,6 +533,12 @@
           "internalType": "uint256",
           "name": "additionalFee",
           "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "asset",
+          "type": "address"
         }
       ],
       "name": "YapRequestTopUp",
@@ -479,6 +567,24 @@
     {
       "inputs": [
         {
+          "internalType": "address",
+          "name": "asset",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "minimumBudget",
+          "type": "uint256"
+        }
+      ],
+      "name": "addAssetSupport",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "uint256",
           "name": "_budget",
           "type": "uint256"
@@ -487,14 +593,19 @@
           "internalType": "uint256",
           "name": "_fee",
           "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "_asset",
+          "type": "address"
         }
       ],
       "name": "createRequest",
       "outputs": [
         {
-          "internalType": "uint32",
+          "internalType": "uint256",
           "name": "",
-          "type": "uint32"
+          "type": "uint256"
         },
         {
           "internalType": "uint256",
@@ -510,32 +621,37 @@
           "internalType": "address",
           "name": "",
           "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
         }
       ],
       "stateMutability": "payable",
       "type": "function"
     },
     {
-      "inputs": [
-        {
-          "internalType": "uint32",
-          "name": "yapRequestCount",
-          "type": "uint32"
-        }
-      ],
-      "name": "getEscrowYapId",
+      "inputs": [],
+      "name": "getAllAssets",
       "outputs": [
         {
-          "internalType": "uint32",
+          "internalType": "address[]",
           "name": "",
-          "type": "uint32"
+          "type": "address[]"
         }
       ],
       "stateMutability": "view",
       "type": "function"
     },
     {
-      "inputs": [],
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "asset",
+          "type": "address"
+        }
+      ],
       "name": "getFeeBalance",
       "outputs": [
         {
@@ -548,14 +664,15 @@
       "type": "function"
     },
     {
-      "inputs": [],
-      "name": "getNetworkChainId",
-      "outputs": [
+      "inputs": [
         {
-          "internalType": "uint32",
-          "name": "",
-          "type": "uint32"
-        },
+          "internalType": "address",
+          "name": "asset",
+          "type": "address"
+        }
+      ],
+      "name": "getMinimumBudget",
+      "outputs": [
         {
           "internalType": "uint256",
           "name": "",
@@ -566,7 +683,13 @@
       "type": "function"
     },
     {
-      "inputs": [],
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "asset",
+          "type": "address"
+        }
+      ],
       "name": "getTotalBalance",
       "outputs": [
         {
@@ -594,9 +717,9 @@
     {
       "inputs": [
         {
-          "internalType": "uint32",
+          "internalType": "uint256",
           "name": "yapRequestId",
-          "type": "uint32"
+          "type": "uint256"
         }
       ],
       "name": "getWinners",
@@ -613,9 +736,9 @@
     {
       "inputs": [
         {
-          "internalType": "uint32",
+          "internalType": "uint256",
           "name": "yapRequestId",
-          "type": "uint32"
+          "type": "uint256"
         }
       ],
       "name": "getYapRequest",
@@ -623,9 +746,9 @@
         {
           "components": [
             {
-              "internalType": "uint32",
+              "internalType": "uint256",
               "name": "yapId",
-              "type": "uint32"
+              "type": "uint256"
             },
             {
               "internalType": "address",
@@ -641,6 +764,11 @@
               "internalType": "uint256",
               "name": "fee",
               "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "asset",
+              "type": "address"
             },
             {
               "internalType": "bool",
@@ -664,9 +792,9 @@
           "type": "address[]"
         },
         {
-          "internalType": "uint32",
+          "internalType": "uint256",
           "name": "_currentYapRequestCount",
-          "type": "uint32"
+          "type": "uint256"
         },
         {
           "internalType": "address",
@@ -688,6 +816,25 @@
         }
       ],
       "name": "isAdmin",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "asset",
+          "type": "address"
+        }
+      ],
+      "name": "isAssetSupported",
       "outputs": [
         {
           "internalType": "bool",
@@ -738,6 +885,19 @@
       "type": "function"
     },
     {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "asset",
+          "type": "address"
+        }
+      ],
+      "name": "removeAssetSupport",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
       "inputs": [],
       "name": "renounceOwnership",
       "outputs": [],
@@ -748,34 +908,8 @@
       "inputs": [
         {
           "internalType": "uint256",
-          "name": "newMinimumBudget",
+          "name": "newYapRequstCount",
           "type": "uint256"
-        }
-      ],
-      "name": "resetMinimumBudget",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "newMinimumFee",
-          "type": "uint256"
-        }
-      ],
-      "name": "resetMinimumFee",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint32",
-          "name": "newYapRequestCount",
-          "type": "uint32"
         }
       ],
       "name": "resetYapRequestCount",
@@ -786,9 +920,9 @@
     {
       "inputs": [
         {
-          "internalType": "uint32",
+          "internalType": "uint256",
           "name": "yapRequestId",
-          "type": "uint32"
+          "type": "uint256"
         },
         {
           "internalType": "address",
@@ -809,9 +943,9 @@
     {
       "inputs": [
         {
-          "internalType": "uint32",
+          "internalType": "uint256",
           "name": "yapRequestId",
-          "type": "uint32"
+          "type": "uint256"
         },
         {
           "internalType": "address[]",
@@ -837,9 +971,9 @@
     {
       "inputs": [
         {
-          "internalType": "uint32",
+          "internalType": "uint256",
           "name": "yapRequestId",
-          "type": "uint32"
+          "type": "uint256"
         },
         {
           "internalType": "uint256",
@@ -873,6 +1007,11 @@
           "internalType": "address",
           "name": "",
           "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
         }
       ],
       "stateMutability": "payable",
@@ -895,6 +1034,24 @@
       "inputs": [
         {
           "internalType": "address",
+          "name": "asset",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "minimumBudget",
+          "type": "uint256"
+        }
+      ],
+      "name": "updateAssetRequirements",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
           "name": "to",
           "type": "address"
         },
@@ -902,6 +1059,11 @@
           "internalType": "uint256",
           "name": "amount",
           "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "asset",
+          "type": "address"
         }
       ],
       "name": "withdrawFees",
