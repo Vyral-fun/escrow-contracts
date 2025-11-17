@@ -10,78 +10,93 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
 
-    uint32 private s_yapRequestCount;
-    uint256 private s_feeBalance;
-    mapping(uint32 => YapRequest) private s_yapRequests;
-    mapping(uint32 => address[]) private s_yapWinners;
+    uint256 private s_yapRequestCount;
+    address[] private s_allAssets;
+    address private constant NATIVE_TOKEN = address(0);
+    mapping(uint256 => YapRequest) private s_yapRequests;
+    mapping(uint256 => address[]) private s_yapWinners;
     mapping(address => bool) private s_is_admin;
-    uint256 private NETWORK_CHAIN_ID;
-    uint256 private MINIMUM_FEE = 500;
-    uint256 private MINIMUM_BUDGET = 45000;
+
+    mapping(address => bool) private s_supportedAssets; // address(0) = native ETH
+    mapping(address => uint256) private s_feeBalances; // fee balances per token
+
+    mapping(address => uint256) private s_minimumTotalBudget; // minimum budget per token
 
     struct YapRequest {
-        uint32 yapId;
+        uint256 yapId;
         address creator;
         uint256 budget;
         uint256 fee;
+        address asset;
         bool isActive;
     }
 
     uint256[50] private __gap;
 
-    event YapRequestCreated(uint32 indexed yapId, address indexed creator, uint256 budget, uint256 fee);
-    event Initialized(address[] admins, uint32 currentYapRequestCount, address owner);
-    event Claimed(uint32 indexed yapId, address winner, uint256 amount);
+    event YapRequestCreated(uint256 indexed yapId, address indexed creator, address asset, uint256 budget, uint256 fee);
+    event Initialized(address[] admins);
+    event Claimed(uint256 indexed yapId, address winner, uint256 amount);
     event AdminAdded(address indexed admin, address indexed addedBy);
     event AdminRemoved(address indexed admin, address indexed removedBy);
+    event RewardsDistributed(uint256 indexed yapRequestId, address[] winners, uint256 totalReward);
     event AffiliateRewardFromFees(uint256 indexed yapRequestId, address affiliate, uint256 reward);
-    event RewardsDistributed(uint32 indexed yapRequestId, address[] winners, uint256 totalReward);
-    event FeesWithdrawn(address indexed to, uint256 amount);
-    event CreatorRefunded(uint32 indexed yapRequestId, address creator, uint256 budgetLeft);
-    event YapRequestCountReset(uint32 newYapRequestCount);
+    event FeesWithdrawn(address indexed to, uint256 amount, address asset);
+    event CreatorRefunded(uint256 indexed yapRequestId, address creator, uint256 budgetLeft);
+    event YapRequestCountReset(uint256 newYapRequestCount);
     event MinimumFeeReset(uint256 newMinimumFee);
     event MinimumBudgetReset(uint256 newMinimumBudget);
     event YapRequestTopUp(
-        uint32 indexed yapId, address indexed creator, uint256 additionalBudget, uint256 additionalFee
+        uint256 indexed yapId, address indexed creator, uint256 additionalBudget, uint256 additionalFee, address asset
     );
+    event AssetAdded(address indexed asset, uint256 minimumBudget);
+    event AssetRemoved(address indexed asset);
+    event AssetUpdated(address indexed asset, uint256 minimumBudget);
 
     error OnlyAdminsCanDistributeRewards();
     error NoWinnersProvided();
     error FeeMustBeGreaterThanZero();
     error BudgetMustBeGreaterThanZero();
-    error InvalidValue();
+    error RewardMustBeGreaterThanZero();
     error YapRequestNotFound();
     error YapRequestNotActive();
     error InvalidYapRequestId();
     error InvalidWinnersProvided();
+    error InvalidAffiliateAddress();
     error InsufficientBudget();
+    error InsufficientFees();
     error NotAdmin();
     error NotTheCreator();
-    error InsufficientFees();
-    error InvalidAffiliateAddress();
-    error RewardMustBeGreaterThanZero();
+    error AssetNotSupported();
+    error AssetAlreadySupported();
+    error InsufficientNativeBalance();
+    error NoEthValueShouldBeSent();
     error NativeTransferFailed();
+    error CannotRemoveCoreAssets();
 
     constructor() {
         _disableInitializers();
     }
 
-    function initialize(address[] memory _admins, uint32 _currentYapRequestCount, address initialOwner)
+    function initialize(address[] memory _admins, uint256 _currentYapRequestCount, address initialOwner)
         public
         initializer
     {
         __Ownable2Step_init();
 
         _transferOwnership(initialOwner);
+        __ReentrancyGuard_init();
         s_yapRequestCount = _currentYapRequestCount;
         s_is_admin[msg.sender] = true;
-        NETWORK_CHAIN_ID = block.chainid;
+
+        s_supportedAssets[NATIVE_TOKEN] = true;
+        s_minimumTotalBudget[NATIVE_TOKEN] = 100000;
+        s_allAssets.push(NATIVE_TOKEN);
 
         for (uint256 i = 0; i < _admins.length; i++) {
             s_is_admin[_admins[i]] = true;
         }
 
-        emit Initialized(_admins, _currentYapRequestCount, initialOwner);
+        emit Initialized(_admins);
     }
 
     /**
@@ -92,34 +107,52 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
      * @dev The budget must be greater than zero
      * @return The ID of the new yap request
      */
-    function createRequest(uint256 _budget, uint256 _fee)
+    function createRequest(uint256 _budget, uint256 _fee, address _asset)
         external
         payable
         nonReentrant
-        returns (uint32, uint256, uint256, address)
+        returns (uint256, uint256, uint256, address, address)
     {
-        if (_budget == 0 || _budget < MINIMUM_BUDGET) {
-            revert BudgetMustBeGreaterThanZero();
-        }
-        if (_fee == 0 || _fee < MINIMUM_FEE) {
-            revert FeeMustBeGreaterThanZero();
+        if (!s_supportedAssets[_asset]) {
+            revert AssetNotSupported();
         }
 
         uint256 total = _budget + _fee;
 
-        if (msg.value < total) {
-            revert InvalidValue();
+        uint256 mininumBudget = s_minimumTotalBudget[_asset];
+
+        if (_budget == 0 || _fee == 0 || total < mininumBudget) {
+            revert BudgetMustBeGreaterThanZero();
+        }
+
+        if (_asset == NATIVE_TOKEN) {
+            if (msg.value < total) {
+                revert InsufficientNativeBalance();
+            }
+
+            if (msg.value > total) {
+                (bool success,) = payable(msg.sender).call{value: msg.value - total}("");
+                if (!success) {
+                    revert NativeTransferFailed();
+                }
+            }
+        } else {
+            if (msg.value > 0) {
+                revert NoEthValueShouldBeSent();
+            }
+
+            IERC20(_asset).safeTransferFrom(msg.sender, address(this), total);
         }
 
         s_yapRequestCount += 1;
-        uint32 escrowYapId = (uint32(NETWORK_CHAIN_ID) << 20) | uint32(s_yapRequestCount);
-        s_yapRequests[escrowYapId] =
-            YapRequest({yapId: escrowYapId, creator: msg.sender, budget: _budget, fee: _fee, isActive: true});
+        s_yapRequests[s_yapRequestCount] = YapRequest({
+            yapId: s_yapRequestCount, creator: msg.sender, budget: _budget, fee: _fee, asset: _asset, isActive: true
+        });
 
-        s_feeBalance += _fee;
-        emit YapRequestCreated(escrowYapId, msg.sender, _budget, _fee);
+        s_feeBalances[_asset] += _fee;
+        emit YapRequestCreated(s_yapRequestCount, msg.sender, _asset, _budget, _fee);
 
-        return (escrowYapId, _budget, _fee, msg.sender);
+        return (s_yapRequestCount, _budget, _fee, msg.sender, _asset);
     }
 
     /**
@@ -130,19 +163,22 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
      * @dev The total budget (additionalBudget + additionalFee) must be greater than the minimum budget for the asset
      * @return The updated yap request details
      */
-    function topUpRequest(uint32 yapRequestId, uint256 additionalBudget, uint256 additionalFee)
+    function topUpRequest(uint256 yapRequestId, uint256 additionalBudget, uint256 additionalFee)
         external
         payable
         nonReentrant
-        returns (uint256, uint256, uint256, address)
+        returns (uint256, uint256, uint256, address, address)
     {
         uint256 total = additionalBudget + additionalFee;
+        address asset = s_yapRequests[yapRequestId].asset;
 
-        if (additionalFee == 0 || additionalFee < MINIMUM_FEE) {
-            revert FeeMustBeGreaterThanZero();
+        if (!s_supportedAssets[asset]) {
+            revert AssetNotSupported();
         }
 
-        if (additionalBudget == 0 || additionalBudget < MINIMUM_BUDGET) {
+        uint256 mininumBudget = s_minimumTotalBudget[asset];
+
+        if (additionalBudget == 0 || additionalFee == 0 || total < mininumBudget) {
             revert BudgetMustBeGreaterThanZero();
         }
 
@@ -159,16 +195,32 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
             revert YapRequestNotActive();
         }
 
-        if (msg.value < total) {
-            revert InvalidValue();
+        if (asset == NATIVE_TOKEN) {
+            if (msg.value < total) {
+                revert InsufficientNativeBalance();
+            }
+
+            if (msg.value > total) {
+                (bool success,) = payable(msg.sender).call{value: msg.value - total}("");
+                if (!success) {
+                    revert NativeTransferFailed();
+                }
+            }
+        } else {
+            if (msg.value > 0) {
+                revert NoEthValueShouldBeSent();
+            }
+
+            IERC20(asset).safeTransferFrom(msg.sender, address(this), total);
         }
 
-        s_feeBalance += additionalFee;
+        s_feeBalances[asset] += additionalFee;
         yapRequest.budget += additionalBudget;
+        yapRequest.fee += additionalFee;
 
-        emit YapRequestTopUp(yapRequest.yapId, yapRequest.creator, additionalBudget, additionalFee);
+        emit YapRequestTopUp(yapRequest.yapId, yapRequest.creator, additionalBudget, additionalFee, asset);
 
-        return (yapRequestId, yapRequest.budget, additionalFee, msg.sender);
+        return (yapRequestId, yapRequest.budget, additionalFee, msg.sender, asset);
     }
 
     /**
@@ -179,7 +231,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
      * @param isLastBatch Indicates if this is the last batch of winners
      */
     function rewardYapWinners(
-        uint32 yapRequestId,
+        uint256 yapRequestId,
         address[] calldata winners,
         uint256[] calldata winnersRewards,
         bool isLastBatch
@@ -221,18 +273,26 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
 
         for (uint256 i = 0; i < winnerslength; i++) {
             s_yapWinners[yapRequestId].push(winners[i]);
-            (bool sent,) = winners[i].call{value: winnersRewards[i]}("");
-            if (!sent) {
-                revert NativeTransferFailed();
+            if (yapRequest.asset == NATIVE_TOKEN) {
+                (bool success,) = payable(winners[i]).call{value: winnersRewards[i]}("");
+                if (!success) {
+                    revert NativeTransferFailed();
+                }
+            } else {
+                IERC20(yapRequest.asset).safeTransfer(winners[i], winnersRewards[i]);
             }
         }
 
         if (isLastBatch) {
             uint256 budgetLeft = s_yapRequests[yapRequestId].budget;
             if (budgetLeft > 0) {
-                (bool sent,) = yapRequest.creator.call{value: budgetLeft}("");
-                if (!sent) {
-                    revert NativeTransferFailed();
+                if (yapRequest.asset == NATIVE_TOKEN) {
+                    (bool success,) = payable(yapRequest.creator).call{value: budgetLeft}("");
+                    if (!success) {
+                        revert NativeTransferFailed();
+                    }
+                } else {
+                    IERC20(yapRequest.asset).safeTransfer(yapRequest.creator, budgetLeft);
                 }
 
                 emit CreatorRefunded(yapRequestId, yapRequest.creator, budgetLeft);
@@ -251,7 +311,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
      * @param affiliate affiliate that referred the campaign creator
      * @param reward reward amounts for the affiliate
      */
-    function rewardAffiliateFromFees(uint32 yapRequestId, address affiliate, uint256 reward) external nonReentrant {
+    function rewardAffiliateFromFees(uint256 yapRequestId, address affiliate, uint256 reward) external nonReentrant {
         if (!s_is_admin[msg.sender]) {
             revert OnlyAdminsCanDistributeRewards();
         }
@@ -275,10 +335,14 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
         }
 
         s_yapRequests[yapRequestId].fee -= reward;
-
-        (bool success,) = payable(affiliate).call{value: reward}("");
-        if (!success) {
-            revert NativeTransferFailed();
+        s_feeBalances[yapRequest.asset] -= reward;
+        if (yapRequest.asset == NATIVE_TOKEN) {
+            (bool success,) = payable(affiliate).call{value: reward}("");
+            if (!success) {
+                revert NativeTransferFailed();
+            }
+        } else {
+            IERC20(yapRequest.asset).safeTransfer(affiliate, reward);
         }
 
         emit AffiliateRewardFromFees(yapRequestId, affiliate, reward);
@@ -289,70 +353,149 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
      * @param to The address to send fees to
      * @param amount The amount of fees to withdraw
      */
-    function withdrawFees(address to, uint256 amount) external onlyOwner {
-        if (amount > s_feeBalance) {
+    function withdrawFees(address to, uint256 amount, address asset) external onlyOwner nonReentrant {
+        if (amount > s_feeBalances[asset]) {
             revert InsufficientBudget();
         }
-        s_feeBalance -= amount;
-        (bool sent,) = to.call{value: amount}("");
-        require(sent, "Failed to send Ether");
+
+        s_feeBalances[asset] -= amount;
+
+        if (asset == NATIVE_TOKEN) {
+            (bool success,) = payable(to).call{value: amount}("");
+            if (!success) {
+                revert NativeTransferFailed();
+            }
+        } else {
+            IERC20(asset).safeTransfer(to, amount);
+        }
+
+        emit FeesWithdrawn(to, amount, asset);
     }
 
     /**
      * @notice Resets the yap request count
-     * @param newYapRequestCount The new yap request count
+     * @param newYapRequstCount The new yap request count
      */
-    function resetYapRequestCount(uint32 newYapRequestCount) external onlyOwner {
-        if (newYapRequestCount == 0) {
+    function resetYapRequestCount(uint256 newYapRequstCount) external onlyOwner {
+        if (newYapRequstCount == 0) {
             revert InvalidYapRequestId();
         }
-        s_yapRequestCount = newYapRequestCount;
+        s_yapRequestCount = newYapRequstCount;
 
-        emit YapRequestCountReset(newYapRequestCount);
+        emit YapRequestCountReset(newYapRequstCount);
     }
 
     /**
-     * @notice Resets the minimum fee for yap requests
-     * @param newMinimumFee The new minimum fee
-     * @dev The new minimum fee must be greater than zero
+     * @notice Add support for a new asset
+     * @param asset The address of the asset to support
+     * @param minimumBudget The minimum budget required for the asset
+     * @dev The asset must not already be supported, and the minimum budget must be greater than zero
      */
-    function resetMinimumFee(uint256 newMinimumFee) external onlyOwner {
-        if (newMinimumFee == 0) {
-            revert FeeMustBeGreaterThanZero();
+    function addAssetSupport(address asset, uint256 minimumBudget) external onlyOwner {
+        if (s_supportedAssets[asset]) {
+            revert AssetAlreadySupported();
         }
-        MINIMUM_FEE = newMinimumFee;
 
-        emit MinimumFeeReset(newMinimumFee);
-    }
-
-    /**
-     * @notice Resets the minimum budget for yap requests
-     * @param newMinimumBudget The new minimum budget
-     * @dev The new minimum budget must be greater than zero
-     */
-    function resetMinimumBudget(uint256 newMinimumBudget) external onlyOwner {
-        if (newMinimumBudget == 0) {
+        if (minimumBudget == 0) {
             revert BudgetMustBeGreaterThanZero();
         }
-        MINIMUM_BUDGET = newMinimumBudget;
 
-        emit MinimumBudgetReset(newMinimumBudget);
+        s_supportedAssets[asset] = true;
+        s_minimumTotalBudget[asset] = minimumBudget;
+
+        uint256 assetCount = s_allAssets.length;
+        bool isAdded = false;
+        for (uint256 i = 0; i < assetCount; i++) {
+            if (s_allAssets[i] == asset) {
+                isAdded = true;
+                break;
+            }
+        }
+
+        if (!isAdded) {
+            s_allAssets.push(asset);
+        }
+
+        emit AssetAdded(asset, minimumBudget);
     }
 
     /**
-     * @notice Gets the fee balance
-     * @return The current fee balance
+     * @notice Remove support for an asset
+     * @param asset The address of the asset to remove support for
+     * @dev Cannot remove core assets like NATIVE_TOKEN
      */
-    function getFeeBalance() external view returns (uint256) {
-        return (s_feeBalance);
+    function removeAssetSupport(address asset) external onlyOwner {
+        if (!s_supportedAssets[asset]) {
+            revert AssetNotSupported();
+        }
+
+        if (asset == NATIVE_TOKEN) {
+            revert CannotRemoveCoreAssets();
+        }
+
+        s_supportedAssets[asset] = false;
+        delete s_minimumTotalBudget[asset];
+
+        emit AssetRemoved(asset);
     }
 
     /**
-     * @notice Gets the total balance of the contract
-     * @return The total balance of the contract in Kaito tokens
+     * @notice Update minimum requirements for an asset
+     * @param asset The address of the asset to update
+     * @param minimumBudget The new minimum budget for the asset
+     * @dev The asset must be supported, and the minimum fee and budget must be greater than zero
      */
-    function getTotalBalance() external view returns (uint256) {
-        return address(this).balance;
+    function updateAssetRequirements(address asset, uint256 minimumBudget) external onlyOwner {
+        if (!s_supportedAssets[asset]) {
+            revert AssetNotSupported();
+        }
+
+        if (minimumBudget == 0) {
+            revert BudgetMustBeGreaterThanZero();
+        }
+
+        s_minimumTotalBudget[asset] = minimumBudget;
+
+        emit AssetUpdated(asset, minimumBudget);
+    }
+
+    /**
+     * @notice Checks if an asset is supported
+     * @param asset The address of the asset to check
+     * @return bool indicating if the asset is supported
+     */
+    function isAssetSupported(address asset) external view returns (bool) {
+        return s_supportedAssets[asset];
+    }
+
+    /**
+     * @notice Gets the minimum budget for a specific asset
+     * @param asset The address of the asset
+     * @return The minimum budget required for the specified asset
+     */
+    function getMinimumBudget(address asset) external view returns (uint256) {
+        return s_minimumTotalBudget[asset];
+    }
+
+    /**
+     * @notice Gets the fee balance for a specific asset
+     * @param asset The address of the asset
+     * @return The current fee balance for the specified asset
+     */
+    function getFeeBalance(address asset) external view returns (uint256) {
+        return s_feeBalances[asset];
+    }
+
+    /**
+     * @notice Gets the total balance of the contract for a specific asset
+     * @param asset The address of the asset
+     * @return The total balance of the contract for the specified asset
+     */
+    function getTotalBalance(address asset) external view returns (uint256) {
+        if (asset == NATIVE_TOKEN) {
+            return address(this).balance;
+        }
+        return IERC20(asset).balanceOf(address(this));
     }
 
     /**
@@ -360,7 +503,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
      * @param yapRequestId The ID of the yap request
      * @return The yap request details
      */
-    function getYapRequest(uint32 yapRequestId) external view returns (YapRequest memory) {
+    function getYapRequest(uint256 yapRequestId) external view returns (YapRequest memory) {
         YapRequest memory yapRequest = s_yapRequests[yapRequestId];
         if (yapRequest.yapId == 0) {
             revert YapRequestNotFound();
@@ -380,30 +523,20 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
      * @notice Gets the winners for yap requests
      * @return Array of the winners of a yap requests
      */
-    function getWinners(uint32 yapRequestId) external view returns (address[] memory) {
+    function getWinners(uint256 yapRequestId) external view returns (address[] memory) {
         return s_yapWinners[yapRequestId];
     }
 
     /**
-     * @notice Gets the network chain ID
-     * @return The current network chain ID
+     * @notice Gets the address of the Kaito token
+     * @return The address of the Kaito token
      */
-    function getNetworkChainId() external view returns (uint32, uint256) {
-        uint32 chainid = uint32(NETWORK_CHAIN_ID & 0xFFF);
-        return (chainid, NETWORK_CHAIN_ID);
+    function getAllAssets() external view returns (address[] memory) {
+        return s_allAssets;
     }
 
     /**
-     * @notice Generates a unique yap ID based on the current chain ID and yap request count
-     * @param yapRequestCount The current yap request count
-     * @return The generated yap ID
-     */
-    function getEscrowYapId(uint32 yapRequestCount) external view returns (uint32) {
-        return (uint32(NETWORK_CHAIN_ID) << 20) | uint32(yapRequestCount);
-    }
-
-    /**
-     * @notice Checks if an addreI want it to be u32ss is an admin
+     * @notice Checks if an address is an admin
      * @return bool indicating if the address is an admin
      */
     function isAdmin(address _address) external view returns (bool) {
