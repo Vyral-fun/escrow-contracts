@@ -28,12 +28,15 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
         uint256 budget;
         uint256 fee;
         address asset;
+        string jobId;
         bool isActive;
     }
 
     uint256[50] private __gap;
 
-    event YapRequestCreated(uint256 indexed yapId, address indexed creator, address asset, uint256 budget, uint256 fee);
+    event YapRequestCreated(
+        uint256 indexed yapId, string indexed jobId, address creator, address asset, uint256 budget, uint256 fee
+    );
     event Initialized(address[] admins);
     event Claimed(uint256 indexed yapId, address winner, uint256 amount);
     event AdminAdded(address indexed admin, address indexed addedBy);
@@ -107,7 +110,7 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
      * @dev The budget must be greater than zero
      * @return The ID of the new yap request
      */
-    function createRequest(uint256 _budget, uint256 _fee, address _asset)
+    function createRequest(uint256 _budget, uint256 _fee, address _asset, string memory _jobId)
         external
         payable
         nonReentrant
@@ -151,11 +154,12 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
             budget: _budget,
             fee: _fee,
             asset: _asset,
+            jobId: _jobId,
             isActive: true
         });
 
         s_feeBalances[_asset] += _fee;
-        emit YapRequestCreated(s_yapRequestCount, msg.sender, _asset, _budget, _fee);
+        emit YapRequestCreated(s_yapRequestCount, _jobId, msg.sender, _asset, _budget, _fee);
 
         return (s_yapRequestCount, _budget, _fee, msg.sender, _asset);
     }
