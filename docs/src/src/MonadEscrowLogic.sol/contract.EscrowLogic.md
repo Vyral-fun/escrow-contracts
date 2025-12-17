@@ -1,5 +1,5 @@
 # EscrowLogic
-[Git Source](https://github.com/Vyral-fun/escrow-contracts/blob/4890c91bba705f61bd409141a46428f143bec72f/src/MonadEscrowLogic.sol)
+[Git Source](https://github.com/Vyral-fun/escrow-contracts/blob/ef033620c921708ee1a686bca376289aea74c21b/src/MonadEscrowLogic.sol)
 
 **Inherits:**
 Initializable, Ownable2StepUpgradeable, ReentrancyGuardUpgradeable
@@ -487,7 +487,7 @@ function removeAdmin(address _admin) external onlyOwner;
 
 ```solidity
 event YapRequestCreated(
-    uint256 indexed yapId, string indexed jobId, address creator, address asset, uint256 budget, uint256 fee
+    uint256 indexed yapId, address indexed creator, string jobId, address asset, uint256 budget, uint256 fee
 );
 ```
 

@@ -1,5 +1,5 @@
 # EscrowProxy
-[Git Source](https://github.com/Vyral-fun/escrow-contracts/blob/4890c91bba705f61bd409141a46428f143bec72f/src/EscrowProxy.sol)
+[Git Source](https://github.com/Vyral-fun/escrow-contracts/blob/ef033620c921708ee1a686bca376289aea74c21b/src/EscrowProxy.sol)
 
 This contract works as a proxy that delegates calls to an implementation contract.
 Only the implementation address and proxy owner are stored here.
