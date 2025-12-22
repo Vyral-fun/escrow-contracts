@@ -1,5 +1,5 @@
 # EscrowProxy
-[Git Source](https://github.com/Vyral-fun/escrow-contracts/blob/ef033620c921708ee1a686bca376289aea74c21b/src/MonadEscrowProxy.sol)
+[Git Source](https://github.com/Vyral-fun/escrow-contracts/blob/9439ddaab5bf1514450403b630f38d8c35dd4868/src/MonadEscrowProxy.sol)
 
 This contract works as a proxy that delegates calls to an implementation contract.
 Only the implementation address and proxy owner are stored here.
@@ -32,7 +32,7 @@ uint256[100] private __gap
 
 
 ```solidity
-constructor(address _logicImplementation, address[] memory _admins, uint256 _currentYapRequestCount) ;
+constructor(address _logicImplementation, address[] memory _admins) ;
 ```
 
 ### upgradeTo

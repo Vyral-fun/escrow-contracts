@@ -1,5 +1,5 @@
 # Escrow
-[Git Source](https://github.com/Vyral-fun/escrow-contracts/blob/ef033620c921708ee1a686bca376289aea74c21b/src/Reward.sol)
+[Git Source](https://github.com/Vyral-fun/escrow-contracts/blob/9439ddaab5bf1514450403b630f38d8c35dd4868/src/Reward.sol)
 
 **Inherits:**
 ReentrancyGuard, Ownable

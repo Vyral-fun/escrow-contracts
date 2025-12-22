@@ -1,5 +1,5 @@
 # EscrowLogic
-[Git Source](https://github.com/Vyral-fun/escrow-contracts/blob/ef033620c921708ee1a686bca376289aea74c21b/src/EscrowLogic.sol)
+[Git Source](https://github.com/Vyral-fun/escrow-contracts/blob/9439ddaab5bf1514450403b630f38d8c35dd4868/src/EscrowLogic.sol)
 
 **Inherits:**
 Initializable, Ownable2StepUpgradeable, ReentrancyGuardUpgradeable
@@ -88,9 +88,7 @@ constructor() ;
 
 
 ```solidity
-function initialize(address[] memory _admins, uint256 _currentYapRequestCount, address initialOwner)
-    public
-    initializer;
+function initialize(address[] memory _admins, address initialOwner) public initializer;
 ```
 
 ### createRequest
@@ -103,7 +101,7 @@ The budget must be greater than zero
 
 
 ```solidity
-function createRequest(uint256 _budget, uint256 _fee, address _asset, string memory _jobId)
+function createRequest(uint256 _escrowId, uint256 _budget, uint256 _fee, address _asset, string memory _jobId)
     external
     payable
     nonReentrant
@@ -113,6 +111,7 @@ function createRequest(uint256 _budget, uint256 _fee, address _asset, string mem
 
 |Name|Type|Description|
 |----|----|-----------|
+|`_escrowId`|`uint256`|The ID of the escrow|
 |`_budget`|`uint256`|The budget for the yap request|
 |`_fee`|`uint256`|The fee from the yap budget (1% = 1000, 0.75% = 750)|
 |`_asset`|`address`||
