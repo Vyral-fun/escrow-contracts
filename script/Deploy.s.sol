@@ -14,14 +14,13 @@ contract DeployScript is Script {
     function run() public returns (EscrowProxy) {
         vm.startBroadcast();
 
-        uint256 CURRENT_YAP_REQUEST_COUNT = 0;
         address[] memory admins = new address[](2);
         admins[0] = 0x47C14E2dD82B7Cf0E7426c991225417e4C40Cd19;
         admins[1] = 0x47C14E2dD82B7Cf0E7426c991225417e4C40Cd19;
 
         escrowLogic = new EscrowLogic();
 
-        escrowProxy = new EscrowProxy(address(escrowLogic), admins, CURRENT_YAP_REQUEST_COUNT);
+        escrowProxy = new EscrowProxy(address(escrowLogic), admins);
 
         console.log("EscrowLogic deployed at:", address(escrowLogic));
         console.log("EscrowProxy deployed at:", address(escrowProxy));
