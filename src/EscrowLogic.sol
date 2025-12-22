@@ -80,15 +80,12 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
         _disableInitializers();
     }
 
-    function initialize(address[] memory _admins, uint256 _currentYapRequestCount, address initialOwner)
-        public
-        initializer
-    {
+    function initialize(address[] memory _admins, address initialOwner) public initializer {
         __Ownable2Step_init();
 
         _transferOwnership(initialOwner);
         __ReentrancyGuard_init();
-        s_yapRequestCount = _currentYapRequestCount;
+        s_yapRequestCount = 0;
         s_is_admin[msg.sender] = true;
 
         s_supportedAssets[NATIVE_TOKEN] = true;
@@ -104,13 +101,14 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
 
     /**
      * @notice Creates a new yap request with specified a budget
+     * @param _escrowId The ID of the escrow
      * @param _budget The budget for the yap request
      * @param _fee The fee from the yap budget (1% = 1000, 0.75% = 750)
      * @dev The fee must be greater than zero
      * @dev The budget must be greater than zero
      * @return The ID of the new yap request
      */
-    function createRequest(uint256 _budget, uint256 _fee, address _asset, string memory _jobId)
+    function createRequest(uint256 _escrowId, uint256 _budget, uint256 _fee, address _asset, string memory _jobId)
         external
         payable
         nonReentrant
@@ -148,8 +146,8 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
         }
 
         s_yapRequestCount += 1;
-        s_yapRequests[s_yapRequestCount] = YapRequest({
-            yapId: s_yapRequestCount,
+        s_yapRequests[_escrowId] = YapRequest({
+            yapId: _escrowId,
             creator: msg.sender,
             budget: _budget,
             fee: _fee,
@@ -159,9 +157,9 @@ contract EscrowLogic is Initializable, Ownable2StepUpgradeable, ReentrancyGuardU
         });
 
         s_feeBalances[_asset] += _fee;
-        emit YapRequestCreated(s_yapRequestCount, msg.sender, _jobId, _asset, _budget, _fee);
+        emit YapRequestCreated(_escrowId, msg.sender, _jobId, _asset, _budget, _fee);
 
-        return (s_yapRequestCount, _budget, _fee, msg.sender, _asset);
+        return (_escrowId, _budget, _fee, msg.sender, _asset);
     }
 
     /**
