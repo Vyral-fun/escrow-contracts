@@ -57,7 +57,7 @@ contract EscrowProxyTest is Test {
         admins[0] = admin;
         admins[1] = owner;
 
-        escrowProxy = new EscrowProxy(address(escrowLogic), admins, 0);
+        escrowProxy = new EscrowProxy(address(escrowLogic), admins);
         escrowProxyAsLogic = EscrowLogic(address(escrowProxy));
 
         // Add test token support
@@ -75,8 +75,11 @@ contract EscrowProxyTest is Test {
         vm.expectEmit(true, true, false, true);
         emit YapRequestCreated(1, user1, NATIVE_TOKEN, REQUEST_BUDGET, FEE);
 
-        (uint256 yapId, uint256 exactBudget,,, address asset) =
-            escrowProxyAsLogic.createRequest{value: TOTAL_REQUEST_BUDGET}(REQUEST_BUDGET, FEE, NATIVE_TOKEN, "randomId");
+        (uint256 yapId, uint256 exactBudget,,, address asset) = escrowProxyAsLogic.createRequest{
+            value: TOTAL_REQUEST_BUDGET
+        }(
+            1, REQUEST_BUDGET, FEE, NATIVE_TOKEN, "randomId"
+        );
 
         vm.stopPrank();
 
@@ -103,7 +106,7 @@ contract EscrowProxyTest is Test {
         emit YapRequestCreated(1, user1, address(testToken), REQUEST_BUDGET, FEE);
 
         (uint256 yapId, uint256 exactBudget,,, address asset) =
-            escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE, address(testToken), "randomId");
+            escrowProxyAsLogic.createRequest(2, REQUEST_BUDGET, FEE, address(testToken), "randomId");
 
         vm.stopPrank();
 
@@ -125,8 +128,9 @@ contract EscrowProxyTest is Test {
         // Create request with native ETH
         vm.startPrank(user1);
         uint256 user1InitialBalance = user1.balance;
-        (uint256 yapId,,,,) =
-            escrowProxyAsLogic.createRequest{value: TOTAL_REQUEST_BUDGET}(REQUEST_BUDGET, FEE, NATIVE_TOKEN, "randomId");
+        (uint256 yapId,,,,) = escrowProxyAsLogic.createRequest{value: TOTAL_REQUEST_BUDGET}(
+            3, REQUEST_BUDGET, FEE, NATIVE_TOKEN, "randomId"
+        );
         vm.stopPrank();
 
         address[] memory winners = new address[](2);
@@ -160,7 +164,7 @@ contract EscrowProxyTest is Test {
         vm.startPrank(user1);
         uint256 user1InitialBalance = testToken.balanceOf(user1);
         testToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
-        (uint256 yapId,,,,) = escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE, address(testToken), "randomId");
+        (uint256 yapId,,,,) = escrowProxyAsLogic.createRequest(4, REQUEST_BUDGET, FEE, address(testToken), "randomId");
         vm.stopPrank();
 
         address[] memory winners = new address[](2);
@@ -192,8 +196,9 @@ contract EscrowProxyTest is Test {
 
     function testTopUpRequestWithNativeToken() public {
         vm.startPrank(user1);
-        (uint256 yapId,,,,) =
-            escrowProxyAsLogic.createRequest{value: TOTAL_REQUEST_BUDGET}(REQUEST_BUDGET, FEE, NATIVE_TOKEN, "randomId");
+        (uint256 yapId,,,,) = escrowProxyAsLogic.createRequest{value: TOTAL_REQUEST_BUDGET}(
+            5, REQUEST_BUDGET, FEE, NATIVE_TOKEN, "randomId"
+        );
 
         (, uint256 newTotalBudget,,,) =
             escrowProxyAsLogic.topUpRequest{value: TOTAL_REQUEST_BUDGET}(yapId, REQUEST_BUDGET, FEE);
@@ -209,7 +214,7 @@ contract EscrowProxyTest is Test {
     function testTopUpRequestWithERC20Token() public {
         vm.startPrank(user1);
         testToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET * 2);
-        (uint256 yapId,,,,) = escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE, address(testToken), "randomId");
+        (uint256 yapId,,,,) = escrowProxyAsLogic.createRequest(6, REQUEST_BUDGET, FEE, address(testToken), "randomId");
 
         (, uint256 newTotalBudget,,,) = escrowProxyAsLogic.topUpRequest(yapId, REQUEST_BUDGET, FEE);
         vm.stopPrank();
@@ -223,7 +228,7 @@ contract EscrowProxyTest is Test {
 
     function testWithdrawFeesNativeToken() public {
         vm.startPrank(user1);
-        escrowProxyAsLogic.createRequest{value: TOTAL_REQUEST_BUDGET}(REQUEST_BUDGET, FEE, NATIVE_TOKEN, "randomId");
+        escrowProxyAsLogic.createRequest{value: TOTAL_REQUEST_BUDGET}(7, REQUEST_BUDGET, FEE, NATIVE_TOKEN, "randomId");
         vm.stopPrank();
 
         uint256 feeBalance = escrowProxyAsLogic.getFeeBalance(NATIVE_TOKEN);
@@ -242,7 +247,7 @@ contract EscrowProxyTest is Test {
     function testWithdrawFeesERC20Token() public {
         vm.startPrank(user1);
         testToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
-        escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE, address(testToken), "randomId");
+        escrowProxyAsLogic.createRequest(8, REQUEST_BUDGET, FEE, address(testToken), "randomId");
         vm.stopPrank();
 
         uint256 feeBalance = escrowProxyAsLogic.getFeeBalance(address(testToken));
@@ -310,14 +315,16 @@ contract EscrowProxyTest is Test {
 
         vm.startPrank(user1);
         vm.expectRevert(EscrowLogic.AssetNotSupported.selector);
-        escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE, address(unsupportedToken), "randomId");
+        escrowProxyAsLogic.createRequest(9, REQUEST_BUDGET, FEE, address(unsupportedToken), "randomId");
         vm.stopPrank();
     }
 
     function testCreateRequestInsufficientNativeTokenReverts() public {
         vm.startPrank(user1);
         vm.expectRevert(EscrowLogic.InsufficientNativeBalance.selector);
-        escrowProxyAsLogic.createRequest{value: TOTAL_REQUEST_BUDGET - 1}(REQUEST_BUDGET, FEE, NATIVE_TOKEN, "randomId");
+        escrowProxyAsLogic.createRequest{value: TOTAL_REQUEST_BUDGET - 1}(
+            10, REQUEST_BUDGET, FEE, NATIVE_TOKEN, "randomId"
+        );
         vm.stopPrank();
     }
 
@@ -325,7 +332,7 @@ contract EscrowProxyTest is Test {
         vm.startPrank(user1);
         testToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
         vm.expectRevert(EscrowLogic.NoEthValueShouldBeSent.selector);
-        escrowProxyAsLogic.createRequest{value: 1 ether}(REQUEST_BUDGET, FEE, address(testToken), "randomId");
+        escrowProxyAsLogic.createRequest{value: 1 ether}(1, REQUEST_BUDGET, FEE, address(testToken), "randomId");
         vm.stopPrank();
     }
 
@@ -334,7 +341,9 @@ contract EscrowProxyTest is Test {
         uint256 initialBalance = user1.balance;
         uint256 excessAmount = 2 ether;
 
-        escrowProxyAsLogic.createRequest{value: TOTAL_REQUEST_BUDGET + excessAmount}(REQUEST_BUDGET, FEE, NATIVE_TOKEN, "randomId");
+        escrowProxyAsLogic.createRequest{value: TOTAL_REQUEST_BUDGET + excessAmount}(
+            2, REQUEST_BUDGET, FEE, NATIVE_TOKEN, "randomId"
+        );
 
         // Should have received refund for excess
         assertEq(user1.balance, initialBalance - TOTAL_REQUEST_BUDGET);
@@ -343,7 +352,7 @@ contract EscrowProxyTest is Test {
 
     function testGetTotalBalance() public {
         vm.startPrank(user1);
-        escrowProxyAsLogic.createRequest{value: TOTAL_REQUEST_BUDGET}(REQUEST_BUDGET, FEE, NATIVE_TOKEN, "randomId");
+        escrowProxyAsLogic.createRequest{value: TOTAL_REQUEST_BUDGET}(1, REQUEST_BUDGET, FEE, NATIVE_TOKEN, "randomId");
         vm.stopPrank();
 
         uint256 nativeBalance = escrowProxyAsLogic.getTotalBalance(NATIVE_TOKEN);
@@ -351,7 +360,7 @@ contract EscrowProxyTest is Test {
 
         vm.startPrank(user1);
         testToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
-        escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE, address(testToken), "randomId");
+        escrowProxyAsLogic.createRequest(1, REQUEST_BUDGET, FEE, address(testToken), "randomId");
         vm.stopPrank();
 
         uint256 tokenBalance = escrowProxyAsLogic.getTotalBalance(address(testToken));
@@ -374,7 +383,7 @@ contract EscrowProxyTest is Test {
     function testRewardYapWinnersNonAdminReverts() public {
         vm.startPrank(user1);
         testToken.approve(address(escrowProxy), TOTAL_REQUEST_BUDGET);
-        (uint256 yapId,,,,) = escrowProxyAsLogic.createRequest(REQUEST_BUDGET, FEE, address(testToken), "randomId");
+        (uint256 yapId,,,,) = escrowProxyAsLogic.createRequest(3, REQUEST_BUDGET, FEE, address(testToken), "randomId");
         vm.stopPrank();
 
         address[] memory winners = new address[](1);
