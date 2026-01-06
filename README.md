@@ -14,7 +14,7 @@
 
 ### Monad Testnet (Staging)
 
-- Escrow: 0xfEFB498c7DC97CE70a17214dB2Fbe97Fb67Ff627
+- Escrow: 0xC0015ace24aa369A842fc89855e03bdEB94b965f
 
 ### Monad Mainnet (Prod)
 
