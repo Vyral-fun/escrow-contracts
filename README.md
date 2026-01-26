@@ -1,24 +1,24 @@
 ## Contract Addresses
 
-### Base Sepolia Multi Asset(Staging) and AffiliateReward
+### Base Sepolia (Staging)
 
-- Escrow: 0x699257452Db6377c13F6ab275c3a7E5FAf290e90
+- Escrow: 0x30B16cbA105e5298dc2c27B9d7727b80e7754e4D
 - Kaito: 0xf1966A1d1a6098c80341f38DCE1a54F8D67e8c87
 - USDC: 0xd311E0ccC2E34d636c5e32853ab5Bd8aF5dB0050
 
-### Base Mainnet Multi Asset(Prod) and AffiliateReward
+### Base Mainnet(Prod)
 
-- Escrow: 0x82ca8ac7826C29C0D52B7A0FD3a9E7b2dAaA80c9
+- Escrow: 0x0e70e25d0a126Ee0a063f1Cadbe4DE8c99f3e25A
 - USDC: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
 - Kaito: 0x98d0baa52b2D063E780DE12F615f963Fe8537553
 
 ### Monad Testnet (Staging)
 
-- Escrow: 0xC0015ace24aa369A842fc89855e03bdEB94b965f
+- Escrow: 0x62F7B0030bb0827a2B685eDC028a021168e9eEF7
 
 ### Monad Mainnet (Prod)
 
-- Escrow: 0x29957e3b3DaBeDBE830b0De53C2C9293d0DB1bda
+- Escrow: 0xba3a334CC4abB470f66F046cE54a1DB6fB8d099E
 
 ## Foundry
 
