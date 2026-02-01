@@ -1,1 +1,668 @@
-{"abi":[{"type":"constructor","inputs":[{"name":"_kaitoAddress","type":"address","internalType":"address"},{"name":"_admins","type":"address[]","internalType":"address[]"}],"stateMutability":"nonpayable"},{"type":"function","name":"createRequest","inputs":[{"name":"_budget","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"nonpayable"},{"type":"function","name":"getTotalYapRequests","inputs":[],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"getWinners","inputs":[{"name":"yapRequestId","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"address[]","internalType":"address[]"}],"stateMutability":"view"},{"type":"function","name":"getYapRequest","inputs":[{"name":"yapRequestId","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"tuple","internalType":"struct Escrow.YapRequest","components":[{"name":"yapId","type":"uint256","internalType":"uint256"},{"name":"creator","type":"address","internalType":"address"},{"name":"budget","type":"uint256","internalType":"uint256"},{"name":"isActive","type":"bool","internalType":"bool"}]}],"stateMutability":"view"},{"type":"function","name":"isAdmin","inputs":[{"name":"_address","type":"address","internalType":"address"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"owner","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"renounceOwnership","inputs":[],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"rewardYapWinners","inputs":[{"name":"yapRequestId","type":"uint256","internalType":"uint256"},{"name":"winners","type":"address[]","internalType":"address[]"},{"name":"winnersRewards","type":"uint256[]","internalType":"uint256[]"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"transferOwnership","inputs":[{"name":"newOwner","type":"address","internalType":"address"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"event","name":"OwnershipTransferred","inputs":[{"name":"previousOwner","type":"address","indexed":true,"internalType":"address"},{"name":"newOwner","type":"address","indexed":true,"internalType":"address"}],"anonymous":false},{"type":"event","name":"RewardsDistributed","inputs":[{"name":"yapId","type":"uint256","indexed":true,"internalType":"uint256"},{"name":"winners","type":"address[]","indexed":false,"internalType":"address[]"},{"name":"rewardPerWinner","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"event","name":"YapRequestCreated","inputs":[{"name":"yapId","type":"uint256","indexed":true,"internalType":"uint256"},{"name":"creator","type":"address","indexed":true,"internalType":"address"},{"name":"budget","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"error","name":"BudgetMustBeGreaterThanZero","inputs":[]},{"type":"error","name":"InsufficientBudget","inputs":[]},{"type":"error","name":"InvalidERC20Address","inputs":[]},{"type":"error","name":"InvalidWinnersProvided","inputs":[]},{"type":"error","name":"InvalidYapRequestId","inputs":[]},{"type":"error","name":"NativeTransferFailed","inputs":[]},{"type":"error","name":"NoWinnersProvided","inputs":[]},{"type":"error","name":"OnlyAdminsCanDistributeRewards","inputs":[]},{"type":"error","name":"OwnableInvalidOwner","inputs":[{"name":"owner","type":"address","internalType":"address"}]},{"type":"error","name":"OwnableUnauthorizedAccount","inputs":[{"name":"account","type":"address","internalType":"address"}]},{"type":"error","name":"ReentrancyGuardReentrantCall","inputs":[]},{"type":"error","name":"SafeERC20FailedOperation","inputs":[{"name":"token","type":"address","internalType":"address"}]},{"type":"error","name":"TokenTransferFailed","inputs":[]},{"type":"error","name":"ValueMustBeGreaterThanZero","inputs":[]},{"type":"error","name":"YapRequestNotActive","inputs":[]},{"type":"error","name":"YapRequestNotFound","inputs":[]}],"bytecode":{"object":"0x60806040523461019457610b2280380380610019816101ac565b92833981019060408183031261019457610032816101d1565b602082015190916001600160401b03821161019457019180601f84011215610194578251926001600160401b038411610198578360051b906020806100788185016101ac565b80978152019282010192831161019457602001905b82821061017c5750505060015f5533156101695760018054336001600160a01b0319821681179092556001600160a01b03167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e05f80a35f6002819055338152600660205260408120805460ff19166001179055600380546001600160a01b0319166001600160a01b0393909316929092179091555b815181101561015a57600190818060a01b0360208260051b85010151165f52600660205260405f208260ff1982541617905501610122565b60405161093c90816101e68239f35b631e4fbdf760e01b5f525f60045260245ffd5b60208091610189846101d1565b81520191019061008d565b5f80fd5b634e487b7160e01b5f52604160045260245ffd5b6040519190601f01601f191682016001600160401b0381118382101761019857604052565b51906001600160a01b03821682036101945756fe6080806040526004361015610012575f80fd5b5f3560e01c90816315dae71c1461079b575080631c9024d3146106d757806324d7806c1461069a5780635513bcfe146103a85780636b1426a4146102f0578063715018a6146102955780638da5cb5b1461026d578063da7620a3146101095763f2fde38b1461007f575f80fd5b34610105576020366003190112610105576100986107b5565b6100a061087c565b6001600160a01b031680156100f257600180546001600160a01b0319811683179091556001600160a01b03167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e05f80a3005b631e4fbdf760e01b5f525f60045260245ffd5b5f80fd5b346101055760203660031901126101055760043561012561085e565b801561025e57331561024f576003546040516323b872dd60e01b602082015233602482015230604482015260648082018490528152610177916001600160a01b0316610172608483610818565b6108a3565b600254906001820180921161023b5781602092600255600360405161019b816107fc565b82815284810133815260408201908582526060830194600186525f526004875260405f2092518355600183019060018060a01b039051166bffffffffffffffffffffffff60a01b825416179055516002820155019051151560ff8019835416911617905560025490604051908152817f5d8b008b43b2e2e7fea50bede538c051b4d690ce6ac95790c864e3d81c636fbe843393a360015f55604051908152f35b634e487b7160e01b5f52601160045260245ffd5b63b0cadf0760e01b5f5260045ffd5b6357971f1d60e01b5f5260045ffd5b34610105575f366003190112610105576001546040516001600160a01b039091168152602090f35b34610105575f366003190112610105576102ad61087c565b600180546001600160a01b031981169091555f906001600160a01b03167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e08280a3005b34610105576020366003190112610105576004355f52600560205260405f20604051806020835491828152019081935f5260205f20905f5b818110610389575050508161033e910382610818565b604051918291602083019060208452518091526040830191905f5b818110610367575050500390f35b82516001600160a01b0316845285945060209384019390920191600101610359565b82546001600160a01b0316845260209093019260019283019201610328565b346101055760603660031901126101055760043560243567ffffffffffffffff8111610105576103dc9036906004016107cb565b9060443567ffffffffffffffff8111610105576103fd9036906004016107cb565b9061040661085e565b83158015610692575b6106835781840361067557845f52600460205260405f2091604051610433816107fc565b835480825260018501546001600160a01b0316602083015260028501546040830190815260039095015460ff16151560609092019182521561024f57511561066657335f52600660205260ff60405f20541615610657575f925f5b8281106106385750518311610629575f868152600460205260408120600301805460ff191690555b85811061053c5750505060405192806040850160408652526060840192905f905b80821061051257867f9fb24ebd5544779d3767bbc63a8dc99755551da4fc78af9735b463bb176c17a28780888860208301520390a260015f55005b90919384359060018060a01b038216809203610105576020816001938293520195019201906104d7565b865f52600560205260405f209061055c61055782898961083a565b61084a565b8254680100000000000000008110156106155760018101808555811015610601575f93845260209093209290920180546001600160a01b0319166001600160a01b039384161790556003546001926105fb91166105bd610557848b8b61083a565b906105c984878961083a565b356040519263a9059cbb60e01b6020850152868060a01b03166024840152604483015260448252610172606483610818565b016104b6565b634e487b7160e01b5f52603260045260245ffd5b634e487b7160e01b5f52604160045260245ffd5b634dd23c8b60e01b5f5260045ffd5b9361064485848661083a565b35810180911161023b579360010161048e565b634c60237960e01b5f5260045ffd5b639419f98f60e01b5f5260045ffd5b626f491760e91b5f5260045ffd5b6305568ffd60e31b5f5260045ffd5b50811561040f565b34610105576020366003190112610105576001600160a01b036106bb6107b5565b165f526006602052602060ff60405f2054166040519015158152f35b34610105576020366003190112610105575f60606040516106f7816107fc565b82815282602082015282604082015201526004355f52600460205260405f20604051610722816107fc565b815480825260018301546001600160a01b03166020830190815260028401546040840190815260039094015460ff16151560608401908152909390911561078c576080936040519351845260018060a01b0390511660208401525160408301525115156060820152f35b6311d6c75b60e31b5f5260045ffd5b34610105575f366003190112610105576020906002548152f35b600435906001600160a01b038216820361010557565b9181601f840112156101055782359167ffffffffffffffff8311610105576020808501948460051b01011161010557565b6080810190811067ffffffffffffffff82111761061557604052565b90601f8019910116810190811067ffffffffffffffff82111761061557604052565b91908110156106015760051b0190565b356001600160a01b03811681036101055790565b60025f541461086d5760025f55565b633ee5aeb560e01b5f5260045ffd5b6001546001600160a01b0316330361089057565b63118cdaa760e01b5f523360045260245ffd5b905f602091828151910182855af1156108fb575f513d6108f257506001600160a01b0381163b155b6108d25750565b635274afe760e01b5f9081526001600160a01b0391909116600452602490fd5b600114156108cb565b6040513d5f823e3d90fdfea2646970667358221220161d1954047f9f5afccbc784039692afafc9ee721d0f1526e74b83a8185c15dd64736f6c634300081c0033","sourceMap":"302:5145:36:-:0;;;;;;;;;;;;;;:::i;:::-;;;;;;;;;;;;;;;;;:::i;:::-;;;;;;;-1:-1:-1;;;;;302:5145:36;;;;;;;;;;;;;;;;;-1:-1:-1;;;;;302:5145:36;;;;;;;;;;;;;;;:::i;:::-;;;;;;;;;;;;;;;;;;;;;;;;;;;1857:1:31;-1:-1:-1;302:5145:36;1509:10;1273:26:21;1269:95;;1857:1:31;302:5145:36;;1509:10;-1:-1:-1;;;;;;302:5145:36;;;;;;;-1:-1:-1;;;;;302:5145:36;3052:40:21;-1:-1:-1;;3052:40:21;-1:-1:-1;421:1:36;302:5145;;;1509:10;302:5145;;1531:10;302:5145;;;;;;;-1:-1:-1;;302:5145:36;1857:1:31;302:5145:36;;;1570:33;302:5145;;-1:-1:-1;;;;;;302:5145:36;-1:-1:-1;;;;;302:5145:36;;;;;;;;;;;1654:3;302:5145;;1634:18;;;;;1857:1:31;302:5145:36;;;;;;;;;;;;;;;-1:-1:-1;302:5145:36;1531:10;302:5145;;;-1:-1:-1;302:5145:36;;;;;;;;;;;1619:13;;1634:18;302:5145;;;;;;;;;1269:95:21;1322:31;;;-1:-1:-1;1322:31:21;-1:-1:-1;1322:31:21;302:5145:36;;-1:-1:-1;1322:31:21;302:5145:36;;;;;;;:::i;:::-;;;;;;;;;;-1:-1:-1;302:5145:36;;;;;;-1:-1:-1;302:5145:36;;;;;-1:-1:-1;302:5145:36;;;;;;;;-1:-1:-1;;302:5145:36;;;-1:-1:-1;;;;;302:5145:36;;;;;;;;;;:::o;:::-;;;-1:-1:-1;;;;;302:5145:36;;;;;;:::o","linkReferences":{}},"deployedBytecode":{"object":"0x6080806040526004361015610012575f80fd5b5f3560e01c90816315dae71c1461079b575080631c9024d3146106d757806324d7806c1461069a5780635513bcfe146103a85780636b1426a4146102f0578063715018a6146102955780638da5cb5b1461026d578063da7620a3146101095763f2fde38b1461007f575f80fd5b34610105576020366003190112610105576100986107b5565b6100a061087c565b6001600160a01b031680156100f257600180546001600160a01b0319811683179091556001600160a01b03167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e05f80a3005b631e4fbdf760e01b5f525f60045260245ffd5b5f80fd5b346101055760203660031901126101055760043561012561085e565b801561025e57331561024f576003546040516323b872dd60e01b602082015233602482015230604482015260648082018490528152610177916001600160a01b0316610172608483610818565b6108a3565b600254906001820180921161023b5781602092600255600360405161019b816107fc565b82815284810133815260408201908582526060830194600186525f526004875260405f2092518355600183019060018060a01b039051166bffffffffffffffffffffffff60a01b825416179055516002820155019051151560ff8019835416911617905560025490604051908152817f5d8b008b43b2e2e7fea50bede538c051b4d690ce6ac95790c864e3d81c636fbe843393a360015f55604051908152f35b634e487b7160e01b5f52601160045260245ffd5b63b0cadf0760e01b5f5260045ffd5b6357971f1d60e01b5f5260045ffd5b34610105575f366003190112610105576001546040516001600160a01b039091168152602090f35b34610105575f366003190112610105576102ad61087c565b600180546001600160a01b031981169091555f906001600160a01b03167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e08280a3005b34610105576020366003190112610105576004355f52600560205260405f20604051806020835491828152019081935f5260205f20905f5b818110610389575050508161033e910382610818565b604051918291602083019060208452518091526040830191905f5b818110610367575050500390f35b82516001600160a01b0316845285945060209384019390920191600101610359565b82546001600160a01b0316845260209093019260019283019201610328565b346101055760603660031901126101055760043560243567ffffffffffffffff8111610105576103dc9036906004016107cb565b9060443567ffffffffffffffff8111610105576103fd9036906004016107cb565b9061040661085e565b83158015610692575b6106835781840361067557845f52600460205260405f2091604051610433816107fc565b835480825260018501546001600160a01b0316602083015260028501546040830190815260039095015460ff16151560609092019182521561024f57511561066657335f52600660205260ff60405f20541615610657575f925f5b8281106106385750518311610629575f868152600460205260408120600301805460ff191690555b85811061053c5750505060405192806040850160408652526060840192905f905b80821061051257867f9fb24ebd5544779d3767bbc63a8dc99755551da4fc78af9735b463bb176c17a28780888860208301520390a260015f55005b90919384359060018060a01b038216809203610105576020816001938293520195019201906104d7565b865f52600560205260405f209061055c61055782898961083a565b61084a565b8254680100000000000000008110156106155760018101808555811015610601575f93845260209093209290920180546001600160a01b0319166001600160a01b039384161790556003546001926105fb91166105bd610557848b8b61083a565b906105c984878961083a565b356040519263a9059cbb60e01b6020850152868060a01b03166024840152604483015260448252610172606483610818565b016104b6565b634e487b7160e01b5f52603260045260245ffd5b634e487b7160e01b5f52604160045260245ffd5b634dd23c8b60e01b5f5260045ffd5b9361064485848661083a565b35810180911161023b579360010161048e565b634c60237960e01b5f5260045ffd5b639419f98f60e01b5f5260045ffd5b626f491760e91b5f5260045ffd5b6305568ffd60e31b5f5260045ffd5b50811561040f565b34610105576020366003190112610105576001600160a01b036106bb6107b5565b165f526006602052602060ff60405f2054166040519015158152f35b34610105576020366003190112610105575f60606040516106f7816107fc565b82815282602082015282604082015201526004355f52600460205260405f20604051610722816107fc565b815480825260018301546001600160a01b03166020830190815260028401546040840190815260039094015460ff16151560608401908152909390911561078c576080936040519351845260018060a01b0390511660208401525160408301525115156060820152f35b6311d6c75b60e31b5f5260045ffd5b34610105575f366003190112610105576020906002548152f35b600435906001600160a01b038216820361010557565b9181601f840112156101055782359167ffffffffffffffff8311610105576020808501948460051b01011161010557565b6080810190811067ffffffffffffffff82111761061557604052565b90601f8019910116810190811067ffffffffffffffff82111761061557604052565b91908110156106015760051b0190565b356001600160a01b03811681036101055790565b60025f541461086d5760025f55565b633ee5aeb560e01b5f5260045ffd5b6001546001600160a01b0316330361089057565b63118cdaa760e01b5f523360045260245ffd5b905f602091828151910182855af1156108fb575f513d6108f257506001600160a01b0381163b155b6108d25750565b635274afe760e01b5f9081526001600160a01b0391909116600452602490fd5b600114156108cb565b6040513d5f823e3d90fdfea2646970667358221220161d1954047f9f5afccbc784039692afafc9ee721d0f1526e74b83a8185c15dd64736f6c634300081c0033","sourceMap":"302:5145:36:-:0;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;;302:5145:36;;;;;;:::i;:::-;1500:62:21;;:::i;:::-;-1:-1:-1;;;;;302:5145:36;2627:22:21;;2623:91;;3004:6;302:5145:36;;-1:-1:-1;;;;;;302:5145:36;;;;;;;-1:-1:-1;;;;;302:5145:36;3052:40:21;-1:-1:-1;;3052:40:21;302:5145:36;2623:91:21;2672:31;;;302:5145:36;2672:31:21;302:5145:36;;;;;2672:31:21;302:5145:36;;;;;;;;;;-1:-1:-1;;302:5145:36;;;;;;2466:103:31;;:::i;:::-;2047:12:36;;2043:79;;2135:10;:24;2131:83;;2231:17;302:5145;;;-1:-1:-1;;;302:5145:36;1745:53:29;;;2135:10:36;1745:53:29;;;302:5145:36;2287:4;302:5145;;;;;;;;;;;1745:53:29;;;;-1:-1:-1;;;;;302:5145:36;1745:53:29;;302:5145:36;1745:53:29;:::i;:::-;;:::i;:::-;2313:22:36;302:5145;;;;;;;;;;;;;2313:22;302:5145;2231:17;302:5145;;;;;:::i;:::-;;;;2392:92;;;2135:10;302:5145;;;2392:92;;302:5145;;;;;2392:92;;302:5145;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;2313:22;302:5145;;;;;;;;;;;;;;;;;;;2313:22;302:5145;;;;;;;2135:10;2500:57;2135:10;;2500:57;;302:5145;;;;;;;;;;;;;;;;;;1745:53:29;302:5145:36;;2131:83;3481:21;;;302:5145;2182:21;302:5145;;2182:21;2043:79;2082:29;;;302:5145;2082:29;302:5145;;2082:29;302:5145;;;;;;-1:-1:-1;;302:5145:36;;;;;;;;-1:-1:-1;;;;;302:5145:36;;;;;;;;;;;;;;-1:-1:-1;;302:5145:36;;;;1500:62:21;;:::i;:::-;3004:6;302:5145:36;;-1:-1:-1;;;;;;302:5145:36;;;;;;;-1:-1:-1;;;;;302:5145:36;3052:40:21;302:5145:36;;3052:40:21;302:5145:36;;;;;;;-1:-1:-1;;302:5145:36;;;;;;;;5175:13;302:5145;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;:::i;:::-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;;;;;302:5145:36;;;;;-1:-1:-1;302:5145:36;;;;;;;;;;;;;;;;-1:-1:-1;;;;;302:5145:36;;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;;302:5145:36;;;;;;;;;;;;;;;;;;;;:::i;:::-;;;;;;;;;;;;;;;;:::i;:::-;2466:103:31;;;:::i;:::-;3145:18:36;;:47;;;;302:5145;3141:104;;3259:37;;;3255:99;;302:5145;;;;;;;;;;;;;;;:::i;:::-;;;;;;;;;;-1:-1:-1;;;;;302:5145:36;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;3437:21;3433:80;;302:5145;;3523:79;;3628:10;302:5145;;3617:10;302:5145;;;;;;;;3616:23;3612:93;;302:5145;3753:13;302:5145;3768:24;;;;;;302:5145;;3870:31;;3866:89;;302:5145;;;;;;;;;;;3965:36;302:5145;;-1:-1:-1;;302:5145:36;;;4040:17;;;;;;302:5145;;;;;;;;;;;;;;;;;;;;;;;;;;;;4231:54;302:5145;;;;;;;;4231:54;;;302:5145;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;4059:3;302:5145;;;4078:13;302:5145;;;;;4111:10;;;;;;;:::i;:::-;;:::i;:::-;302:5145;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;;;;;;302:5145:36;-1:-1:-1;;;;;302:5145:36;;;;;;;;;;1328:43:29;;302:5145:36;4175:10;;;;;;:::i;:::-;4187:17;;;;;;:::i;:::-;302:5145;;;;;;;;1328:43:29;;;302:5145:36;;;;;;;1328:43:29;;302:5145:36;;;;;;1328:43:29;;;;;;:::i;:::-;302:5145:36;4025:13;;302:5145;;;;;;;;;;;;;;;;;;;;;;;;3866:89;3924:20;;;302:5145;3924:20;302:5145;;3924:20;3794:3;3828:17;;;;;;:::i;:::-;302:5145;;;;;;;;3813:32;302:5145;;3753:13;;3612:93;3662:32;;;302:5145;3662:32;302:5145;;3662:32;3523:79;3570:21;;;302:5145;3570:21;302:5145;;3570:21;3255:99;3319:24;;;302:5145;3319:24;302:5145;;3319:24;3141:104;3215:19;;;302:5145;3215:19;302:5145;;3215:19;3145:47;3167:25;;;3145:47;;302:5145;;;;;;-1:-1:-1;;302:5145:36;;;;-1:-1:-1;;;;;302:5145:36;;:::i;:::-;;;;5418:10;302:5145;;;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;;302:5145:36;;;;;;;;;;;:::i;:::-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;:::i;:::-;;;;;;;;;;-1:-1:-1;;;;;302:5145:36;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;4615:21;4611:79;;302:5145;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;4611:79;4659:20;;;302:5145;4659:20;302:5145;;4659:20;302:5145;;;;;;-1:-1:-1;;302:5145:36;;;;;;4926:17;302:5145;;;;;;;;-1:-1:-1;;;;;302:5145:36;;;;;;:::o;:::-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;:::o;:::-;;;;;;;;;;;;;;;:::o;:::-;;;;;;;;;;;;;;;;;;;;;:::o;:::-;;;;;;;;;;;;:::o;:::-;;-1:-1:-1;;;;;302:5145:36;;;;;;;:::o;2575:307:31:-;1899:1;2702:7;302:5145:36;2702:18:31;2698:86;;1899:1;2702:7;302:5145:36;2575:307:31:o;2698:86::-;2743:30;;;2702:7;2743:30;;2702:7;2743:30;1796:162:21;302:5145:36;;-1:-1:-1;;;;;302:5145:36;735:10:30;1855:23:21;1851:101;;1796:162::o;1851:101::-;1901:40;;;-1:-1:-1;1901:40:21;735:10:30;1901:40:21;302:5145:36;;-1:-1:-1;1901:40:21;7686:720:29;;-1:-1:-1;7823:421:29;7686:720;7823:421;;;;;;;;;;;;-1:-1:-1;7823:421:29;;8258:15;;-1:-1:-1;;;;;;302:5145:36;;8276:26:29;:31;8258:68;8254:146;;7686:720;:::o;8254:146::-;-1:-1:-1;;;;8349:40:29;;;-1:-1:-1;;;;;302:5145:36;;;;8349:40:29;302:5145:36;;;8349:40:29;8258:68;8325:1;8310:16;;8258:68;;7823:421;;;;-1:-1:-1;7823:421:29;;;;","linkReferences":{}},"methodIdentifiers":{"createRequest(uint256)":"da7620a3","getTotalYapRequests()":"15dae71c","getWinners(uint256)":"6b1426a4","getYapRequest(uint256)":"1c9024d3","isAdmin(address)":"24d7806c","owner()":"8da5cb5b","renounceOwnership()":"715018a6","rewardYapWinners(uint256,address[],uint256[])":"5513bcfe","transferOwnership(address)":"f2fde38b"},"rawMetadata":"{\"compiler\":{\"version\":\"0.8.28+commit.7893614a\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_kaitoAddress\",\"type\":\"address\"},{\"internalType\":\"address[]\",\"name\":\"_admins\",\"type\":\"address[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"BudgetMustBeGreaterThanZero\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"InsufficientBudget\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"InvalidERC20Address\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"InvalidWinnersProvided\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"InvalidYapRequestId\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"NativeTransferFailed\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"NoWinnersProvided\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"OnlyAdminsCanDistributeRewards\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"ReentrancyGuardReentrantCall\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"}],\"name\":\"SafeERC20FailedOperation\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"TokenTransferFailed\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"ValueMustBeGreaterThanZero\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"YapRequestNotActive\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"YapRequestNotFound\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"yapId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address[]\",\"name\":\"winners\",\"type\":\"address[]\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"rewardPerWinner\",\"type\":\"uint256\"}],\"name\":\"RewardsDistributed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"yapId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"creator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"budget\",\"type\":\"uint256\"}],\"name\":\"YapRequestCreated\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_budget\",\"type\":\"uint256\"}],\"name\":\"createRequest\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getTotalYapRequests\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"yapRequestId\",\"type\":\"uint256\"}],\"name\":\"getWinners\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"yapRequestId\",\"type\":\"uint256\"}],\"name\":\"getYapRequest\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"yapId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"creator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"budget\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"isActive\",\"type\":\"bool\"}],\"internalType\":\"struct Escrow.YapRequest\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_address\",\"type\":\"address\"}],\"name\":\"isAdmin\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"yapRequestId\",\"type\":\"uint256\"},{\"internalType\":\"address[]\",\"name\":\"winners\",\"type\":\"address[]\"},{\"internalType\":\"uint256[]\",\"name\":\"winnersRewards\",\"type\":\"uint256[]\"}],\"name\":\"rewardYapWinners\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"errors\":{\"OwnableInvalidOwner(address)\":[{\"details\":\"The owner is not a valid owner account. (eg. `address(0)`)\"}],\"OwnableUnauthorizedAccount(address)\":[{\"details\":\"The caller account is not authorized to perform an operation.\"}],\"ReentrancyGuardReentrantCall()\":[{\"details\":\"Unauthorized reentrant call.\"}],\"SafeERC20FailedOperation(address)\":[{\"details\":\"An operation with an ERC-20 token failed.\"}]},\"kind\":\"dev\",\"methods\":{\"createRequest(uint256)\":{\"details\":\"The budget must be greater than zero\",\"params\":{\"_budget\":\"The budget for the yap request\"},\"returns\":{\"_0\":\"The ID of the new yap request\"}},\"getTotalYapRequests()\":{\"returns\":{\"_0\":\"The total number of yap requests\"}},\"getWinners(uint256)\":{\"returns\":{\"_0\":\"Array of the winners of a yap requests\"}},\"getYapRequest(uint256)\":{\"params\":{\"yapRequestId\":\"The ID of the yap request\"},\"returns\":{\"_0\":\"The yap request details\"}},\"isAdmin(address)\":{\"returns\":{\"_0\":\"bool indicating if the address is an admin\"}},\"owner()\":{\"details\":\"Returns the address of the current owner.\"},\"renounceOwnership()\":{\"details\":\"Leaves the contract without owner. It will not be possible to call `onlyOwner` functions. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby disabling any functionality that is only available to the owner.\"},\"rewardYapWinners(uint256,address[],uint256[])\":{\"params\":{\"winners\":\"Array of winner addresses\",\"winnersRewards\":\"Array of corresponding reward amounts for each winner\",\"yapRequestId\":\"The ID of the yap request\"}},\"transferOwnership(address)\":{\"details\":\"Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner.\"}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"createRequest(uint256)\":{\"notice\":\"Creates a new yap request with specified a budget\"},\"getTotalYapRequests()\":{\"notice\":\"Gets the total number of yap requests\"},\"getWinners(uint256)\":{\"notice\":\"Gets the winners for yap requests\"},\"getYapRequest(uint256)\":{\"notice\":\"Gets a yap request by ID\"},\"isAdmin(address)\":{\"notice\":\"Checks if an address is an admin\"},\"rewardYapWinners(uint256,address[],uint256[])\":{\"notice\":\"Distributes rewards to winners of a yap request\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"src/Escrow.sol\":\"Escrow\"},\"evmVersion\":\"cancun\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[\":@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/\",\":@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/\",\":@uniswap/v2-core/=lib/v2-core/contracts/\",\":@uniswap/v2-periphery/=lib/v2-periphery/contracts/\",\":erc4626-tests/=lib/openzeppelin-contracts-upgradeable/lib/erc4626-tests/\",\":forge-std/=lib/forge-std/src/\",\":halmos-cheatcodes/=lib/openzeppelin-contracts-upgradeable/lib/halmos-cheatcodes/src/\",\":openzeppelin-contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/\",\":openzeppelin-contracts/=lib/openzeppelin-contracts/\",\":v2-core/=lib/v2-core/contracts/\",\":v2-periphery/=lib/v2-periphery/contracts/\"],\"viaIR\":true},\"sources\":{\"lib/openzeppelin-contracts/contracts/access/Ownable.sol\":{\"keccak256\":\"0xff6d0bb2e285473e5311d9d3caacb525ae3538a80758c10649a4d61029b017bb\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://8ed324d3920bb545059d66ab97d43e43ee85fd3bd52e03e401f020afb0b120f6\",\"dweb:/ipfs/QmfEckWLmZkDDcoWrkEvMWhms66xwTLff9DDhegYpvHo1a\"]},\"lib/openzeppelin-contracts/contracts/interfaces/IERC1363.sol\":{\"keccak256\":\"0x9b6b3e7803bc5f2f8cd7ad57db8ac1def61a9930a5a3107df4882e028a9605d7\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://da62d6be1f5c6edf577f0cb45666a8aa9c2086a4bac87d95d65f02e2f4c36a4b\",\"dweb:/ipfs/QmNkpvBpoCMvX8JwAFNSc5XxJ2q5BXJpL5L1txb4QkqVFF\"]},\"lib/openzeppelin-contracts/contracts/interfaces/IERC165.sol\":{\"keccak256\":\"0xde7e9fd9aee8d4f40772f96bb3b58836cbc6dfc0227014a061947f8821ea9724\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://11fea9f8bc98949ac6709f0c1699db7430d2948137aa94d5a9e95a91f61a710a\",\"dweb:/ipfs/QmQdfRXxQjwP6yn3DVo1GHPpriKNcFghSPi94Z1oKEFUNS\"]},\"lib/openzeppelin-contracts/contracts/interfaces/IERC20.sol\":{\"keccak256\":\"0xce41876e78d1badc0512229b4d14e4daf83bc1003d7f83978d18e0e56f965b9c\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://a2608291cb038b388d80b79a06b6118a42f7894ff67b7da10ec0dbbf5b2973ba\",\"dweb:/ipfs/QmWohqcBLbcxmA4eGPhZDXe5RYMMEEpFq22nfkaUMvTfw1\"]},\"lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol\":{\"keccak256\":\"0xe06a3f08a987af6ad2e1c1e774405d4fe08f1694b67517438b467cecf0da0ef7\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://df6f0c459663c9858b6cba2cda1d14a7d05a985bed6d2de72bd8e78c25ee79db\",\"dweb:/ipfs/QmeTTxZ7qVk9rjEv2R4CpCwdf8UMCcRqDNMvzNxHc3Fnn9\"]},\"lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol\":{\"keccak256\":\"0x4ea01544758fd2c7045961904686bfe232d2220a04ecaa2d6b08dac17827febf\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://fabe6bef5167ae741dd8c22d7f81d3f9120bd61b290762a2e8f176712567d329\",\"dweb:/ipfs/QmSnEitJ6xmf1SSAUeZozD7Gx7h8bNnX3a1ZBzqeivsvVg\"]},\"lib/openzeppelin-contracts/contracts/utils/Context.sol\":{\"keccak256\":\"0x493033a8d1b176a037b2cc6a04dad01a5c157722049bbecf632ca876224dd4b2\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://6a708e8a5bdb1011c2c381c9a5cfd8a9a956d7d0a9dc1bd8bcdaf52f76ef2f12\",\"dweb:/ipfs/Qmax9WHBnVsZP46ZxEMNRQpLQnrdE4dK8LehML1Py8FowF\"]},\"lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol\":{\"keccak256\":\"0x11a5a79827df29e915a12740caf62fe21ebe27c08c9ae3e09abe9ee3ba3866d3\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://3cf0c69ab827e3251db9ee6a50647d62c90ba580a4d7bbff21f2bea39e7b2f4a\",\"dweb:/ipfs/QmZiKwtKU1SBX4RGfQtY7PZfiapbbu6SZ9vizGQD9UHjRA\"]},\"lib/openzeppelin-contracts/contracts/utils/introspection/IERC165.sol\":{\"keccak256\":\"0x79796192ec90263f21b464d5bc90b777a525971d3de8232be80d9c4f9fb353b8\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://f6fda447a62815e8064f47eff0dd1cf58d9207ad69b5d32280f8d7ed1d1e4621\",\"dweb:/ipfs/QmfDRc7pxfaXB2Dh9np5Uf29Na3pQ7tafRS684wd3GLjVL\"]},\"src/Escrow.sol\":{\"keccak256\":\"0xfa8751cc3bd25149e24a4a9ef845fa8cb29490e7262e41816ea8a3bfe3096492\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://95894db978ab47f2576a7c89975b4f7f312ecada17f9e1a4f3b6e3ad6e4c09e2\",\"dweb:/ipfs/QmNqQbR9m2ySdLzjL9dXbi4EvdEsaywymVpXd7h4YfXhej\"]}},\"version\":1}","metadata":{"compiler":{"version":"0.8.28+commit.7893614a"},"language":"Solidity","output":{"abi":[{"inputs":[{"internalType":"address","name":"_kaitoAddress","type":"address"},{"internalType":"address[]","name":"_admins","type":"address[]"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"type":"error","name":"BudgetMustBeGreaterThanZero"},{"inputs":[],"type":"error","name":"InsufficientBudget"},{"inputs":[],"type":"error","name":"InvalidERC20Address"},{"inputs":[],"type":"error","name":"InvalidWinnersProvided"},{"inputs":[],"type":"error","name":"InvalidYapRequestId"},{"inputs":[],"type":"error","name":"NativeTransferFailed"},{"inputs":[],"type":"error","name":"NoWinnersProvided"},{"inputs":[],"type":"error","name":"OnlyAdminsCanDistributeRewards"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"type":"error","name":"OwnableInvalidOwner"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"type":"error","name":"OwnableUnauthorizedAccount"},{"inputs":[],"type":"error","name":"ReentrancyGuardReentrantCall"},{"inputs":[{"internalType":"address","name":"token","type":"address"}],"type":"error","name":"SafeERC20FailedOperation"},{"inputs":[],"type":"error","name":"TokenTransferFailed"},{"inputs":[],"type":"error","name":"ValueMustBeGreaterThanZero"},{"inputs":[],"type":"error","name":"YapRequestNotActive"},{"inputs":[],"type":"error","name":"YapRequestNotFound"},{"inputs":[{"internalType":"address","name":"previousOwner","type":"address","indexed":true},{"internalType":"address","name":"newOwner","type":"address","indexed":true}],"type":"event","name":"OwnershipTransferred","anonymous":false},{"inputs":[{"internalType":"uint256","name":"yapId","type":"uint256","indexed":true},{"internalType":"address[]","name":"winners","type":"address[]","indexed":false},{"internalType":"uint256","name":"rewardPerWinner","type":"uint256","indexed":false}],"type":"event","name":"RewardsDistributed","anonymous":false},{"inputs":[{"internalType":"uint256","name":"yapId","type":"uint256","indexed":true},{"internalType":"address","name":"creator","type":"address","indexed":true},{"internalType":"uint256","name":"budget","type":"uint256","indexed":false}],"type":"event","name":"YapRequestCreated","anonymous":false},{"inputs":[{"internalType":"uint256","name":"_budget","type":"uint256"}],"stateMutability":"nonpayable","type":"function","name":"createRequest","outputs":[{"internalType":"uint256","name":"","type":"uint256"}]},{"inputs":[],"stateMutability":"view","type":"function","name":"getTotalYapRequests","outputs":[{"internalType":"uint256","name":"","type":"uint256"}]},{"inputs":[{"internalType":"uint256","name":"yapRequestId","type":"uint256"}],"stateMutability":"view","type":"function","name":"getWinners","outputs":[{"internalType":"address[]","name":"","type":"address[]"}]},{"inputs":[{"internalType":"uint256","name":"yapRequestId","type":"uint256"}],"stateMutability":"view","type":"function","name":"getYapRequest","outputs":[{"internalType":"struct Escrow.YapRequest","name":"","type":"tuple","components":[{"internalType":"uint256","name":"yapId","type":"uint256"},{"internalType":"address","name":"creator","type":"address"},{"internalType":"uint256","name":"budget","type":"uint256"},{"internalType":"bool","name":"isActive","type":"bool"}]}]},{"inputs":[{"internalType":"address","name":"_address","type":"address"}],"stateMutability":"view","type":"function","name":"isAdmin","outputs":[{"internalType":"bool","name":"","type":"bool"}]},{"inputs":[],"stateMutability":"view","type":"function","name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}]},{"inputs":[],"stateMutability":"nonpayable","type":"function","name":"renounceOwnership"},{"inputs":[{"internalType":"uint256","name":"yapRequestId","type":"uint256"},{"internalType":"address[]","name":"winners","type":"address[]"},{"internalType":"uint256[]","name":"winnersRewards","type":"uint256[]"}],"stateMutability":"nonpayable","type":"function","name":"rewardYapWinners"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"stateMutability":"nonpayable","type":"function","name":"transferOwnership"}],"devdoc":{"kind":"dev","methods":{"createRequest(uint256)":{"details":"The budget must be greater than zero","params":{"_budget":"The budget for the yap request"},"returns":{"_0":"The ID of the new yap request"}},"getTotalYapRequests()":{"returns":{"_0":"The total number of yap requests"}},"getWinners(uint256)":{"returns":{"_0":"Array of the winners of a yap requests"}},"getYapRequest(uint256)":{"params":{"yapRequestId":"The ID of the yap request"},"returns":{"_0":"The yap request details"}},"isAdmin(address)":{"returns":{"_0":"bool indicating if the address is an admin"}},"owner()":{"details":"Returns the address of the current owner."},"renounceOwnership()":{"details":"Leaves the contract without owner. It will not be possible to call `onlyOwner` functions. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby disabling any functionality that is only available to the owner."},"rewardYapWinners(uint256,address[],uint256[])":{"params":{"winners":"Array of winner addresses","winnersRewards":"Array of corresponding reward amounts for each winner","yapRequestId":"The ID of the yap request"}},"transferOwnership(address)":{"details":"Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner."}},"version":1},"userdoc":{"kind":"user","methods":{"createRequest(uint256)":{"notice":"Creates a new yap request with specified a budget"},"getTotalYapRequests()":{"notice":"Gets the total number of yap requests"},"getWinners(uint256)":{"notice":"Gets the winners for yap requests"},"getYapRequest(uint256)":{"notice":"Gets a yap request by ID"},"isAdmin(address)":{"notice":"Checks if an address is an admin"},"rewardYapWinners(uint256,address[],uint256[])":{"notice":"Distributes rewards to winners of a yap request"}},"version":1}},"settings":{"remappings":["@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/","@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/","@uniswap/v2-core/=lib/v2-core/contracts/","@uniswap/v2-periphery/=lib/v2-periphery/contracts/","erc4626-tests/=lib/openzeppelin-contracts-upgradeable/lib/erc4626-tests/","forge-std/=lib/forge-std/src/","halmos-cheatcodes/=lib/openzeppelin-contracts-upgradeable/lib/halmos-cheatcodes/src/","openzeppelin-contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/","openzeppelin-contracts/=lib/openzeppelin-contracts/","v2-core/=lib/v2-core/contracts/","v2-periphery/=lib/v2-periphery/contracts/"],"optimizer":{"enabled":true,"runs":200},"metadata":{"bytecodeHash":"ipfs"},"compilationTarget":{"src/Escrow.sol":"Escrow"},"evmVersion":"cancun","libraries":{},"viaIR":true},"sources":{"lib/openzeppelin-contracts/contracts/access/Ownable.sol":{"keccak256":"0xff6d0bb2e285473e5311d9d3caacb525ae3538a80758c10649a4d61029b017bb","urls":["bzz-raw://8ed324d3920bb545059d66ab97d43e43ee85fd3bd52e03e401f020afb0b120f6","dweb:/ipfs/QmfEckWLmZkDDcoWrkEvMWhms66xwTLff9DDhegYpvHo1a"],"license":"MIT"},"lib/openzeppelin-contracts/contracts/interfaces/IERC1363.sol":{"keccak256":"0x9b6b3e7803bc5f2f8cd7ad57db8ac1def61a9930a5a3107df4882e028a9605d7","urls":["bzz-raw://da62d6be1f5c6edf577f0cb45666a8aa9c2086a4bac87d95d65f02e2f4c36a4b","dweb:/ipfs/QmNkpvBpoCMvX8JwAFNSc5XxJ2q5BXJpL5L1txb4QkqVFF"],"license":"MIT"},"lib/openzeppelin-contracts/contracts/interfaces/IERC165.sol":{"keccak256":"0xde7e9fd9aee8d4f40772f96bb3b58836cbc6dfc0227014a061947f8821ea9724","urls":["bzz-raw://11fea9f8bc98949ac6709f0c1699db7430d2948137aa94d5a9e95a91f61a710a","dweb:/ipfs/QmQdfRXxQjwP6yn3DVo1GHPpriKNcFghSPi94Z1oKEFUNS"],"license":"MIT"},"lib/openzeppelin-contracts/contracts/interfaces/IERC20.sol":{"keccak256":"0xce41876e78d1badc0512229b4d14e4daf83bc1003d7f83978d18e0e56f965b9c","urls":["bzz-raw://a2608291cb038b388d80b79a06b6118a42f7894ff67b7da10ec0dbbf5b2973ba","dweb:/ipfs/QmWohqcBLbcxmA4eGPhZDXe5RYMMEEpFq22nfkaUMvTfw1"],"license":"MIT"},"lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol":{"keccak256":"0xe06a3f08a987af6ad2e1c1e774405d4fe08f1694b67517438b467cecf0da0ef7","urls":["bzz-raw://df6f0c459663c9858b6cba2cda1d14a7d05a985bed6d2de72bd8e78c25ee79db","dweb:/ipfs/QmeTTxZ7qVk9rjEv2R4CpCwdf8UMCcRqDNMvzNxHc3Fnn9"],"license":"MIT"},"lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol":{"keccak256":"0x4ea01544758fd2c7045961904686bfe232d2220a04ecaa2d6b08dac17827febf","urls":["bzz-raw://fabe6bef5167ae741dd8c22d7f81d3f9120bd61b290762a2e8f176712567d329","dweb:/ipfs/QmSnEitJ6xmf1SSAUeZozD7Gx7h8bNnX3a1ZBzqeivsvVg"],"license":"MIT"},"lib/openzeppelin-contracts/contracts/utils/Context.sol":{"keccak256":"0x493033a8d1b176a037b2cc6a04dad01a5c157722049bbecf632ca876224dd4b2","urls":["bzz-raw://6a708e8a5bdb1011c2c381c9a5cfd8a9a956d7d0a9dc1bd8bcdaf52f76ef2f12","dweb:/ipfs/Qmax9WHBnVsZP46ZxEMNRQpLQnrdE4dK8LehML1Py8FowF"],"license":"MIT"},"lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol":{"keccak256":"0x11a5a79827df29e915a12740caf62fe21ebe27c08c9ae3e09abe9ee3ba3866d3","urls":["bzz-raw://3cf0c69ab827e3251db9ee6a50647d62c90ba580a4d7bbff21f2bea39e7b2f4a","dweb:/ipfs/QmZiKwtKU1SBX4RGfQtY7PZfiapbbu6SZ9vizGQD9UHjRA"],"license":"MIT"},"lib/openzeppelin-contracts/contracts/utils/introspection/IERC165.sol":{"keccak256":"0x79796192ec90263f21b464d5bc90b777a525971d3de8232be80d9c4f9fb353b8","urls":["bzz-raw://f6fda447a62815e8064f47eff0dd1cf58d9207ad69b5d32280f8d7ed1d1e4621","dweb:/ipfs/QmfDRc7pxfaXB2Dh9np5Uf29Na3pQ7tafRS684wd3GLjVL"],"license":"MIT"},"src/Escrow.sol":{"keccak256":"0xfa8751cc3bd25149e24a4a9ef845fa8cb29490e7262e41816ea8a3bfe3096492","urls":["bzz-raw://95894db978ab47f2576a7c89975b4f7f312ecada17f9e1a4f3b6e3ad6e4c09e2","dweb:/ipfs/QmNqQbR9m2ySdLzjL9dXbi4EvdEsaywymVpXd7h4YfXhej"],"license":"UNLICENSED"}},"version":1},"id":36}
+{
+  "abi": [
+    {
+      "type": "constructor",
+      "inputs": [
+        {
+          "name": "_kaitoAddress",
+          "type": "address",
+          "internalType": "address"
+        },
+        { "name": "_admins", "type": "address[]", "internalType": "address[]" }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "createRequest",
+      "inputs": [
+        { "name": "_budget", "type": "uint256", "internalType": "uint256" }
+      ],
+      "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "getTotalYapRequests",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getWinners",
+      "inputs": [
+        { "name": "yapRequestId", "type": "uint256", "internalType": "uint256" }
+      ],
+      "outputs": [
+        { "name": "", "type": "address[]", "internalType": "address[]" }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getYapRequest",
+      "inputs": [
+        { "name": "yapRequestId", "type": "uint256", "internalType": "uint256" }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "tuple",
+          "internalType": "struct Escrow.YapRequest",
+          "components": [
+            { "name": "yapId", "type": "uint256", "internalType": "uint256" },
+            { "name": "creator", "type": "address", "internalType": "address" },
+            { "name": "budget", "type": "uint256", "internalType": "uint256" },
+            { "name": "isActive", "type": "bool", "internalType": "bool" }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "isAdmin",
+      "inputs": [
+        { "name": "_address", "type": "address", "internalType": "address" }
+      ],
+      "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "owner",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "address", "internalType": "address" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "renounceOwnership",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "rewardYapWinners",
+      "inputs": [
+        {
+          "name": "yapRequestId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        { "name": "winners", "type": "address[]", "internalType": "address[]" },
+        {
+          "name": "winnersRewards",
+          "type": "uint256[]",
+          "internalType": "uint256[]"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "transferOwnership",
+      "inputs": [
+        { "name": "newOwner", "type": "address", "internalType": "address" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "event",
+      "name": "OwnershipTransferred",
+      "inputs": [
+        {
+          "name": "previousOwner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "newOwner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "RewardsDistributed",
+      "inputs": [
+        {
+          "name": "yapId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "winners",
+          "type": "address[]",
+          "indexed": false,
+          "internalType": "address[]"
+        },
+        {
+          "name": "rewardPerWinner",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "YapRequestCreated",
+      "inputs": [
+        {
+          "name": "yapId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "creator",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "budget",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    { "type": "error", "name": "BudgetMustBeGreaterThanZero", "inputs": [] },
+    { "type": "error", "name": "InsufficientBudget", "inputs": [] },
+    { "type": "error", "name": "InvalidERC20Address", "inputs": [] },
+    { "type": "error", "name": "InvalidWinnersProvided", "inputs": [] },
+    { "type": "error", "name": "InvalidYapRequestId", "inputs": [] },
+    { "type": "error", "name": "NativeTransferFailed", "inputs": [] },
+    { "type": "error", "name": "NoWinnersProvided", "inputs": [] },
+    { "type": "error", "name": "OnlyAdminsCanDistributeRewards", "inputs": [] },
+    {
+      "type": "error",
+      "name": "OwnableInvalidOwner",
+      "inputs": [
+        { "name": "owner", "type": "address", "internalType": "address" }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "OwnableUnauthorizedAccount",
+      "inputs": [
+        { "name": "account", "type": "address", "internalType": "address" }
+      ]
+    },
+    { "type": "error", "name": "ReentrancyGuardReentrantCall", "inputs": [] },
+    {
+      "type": "error",
+      "name": "SafeERC20FailedOperation",
+      "inputs": [
+        { "name": "token", "type": "address", "internalType": "address" }
+      ]
+    },
+    { "type": "error", "name": "TokenTransferFailed", "inputs": [] },
+    { "type": "error", "name": "ValueMustBeGreaterThanZero", "inputs": [] },
+    { "type": "error", "name": "YapRequestNotActive", "inputs": [] },
+    { "type": "error", "name": "YapRequestNotFound", "inputs": [] }
+  ],
+  "bytecode": {
+    "object": "0x60806040523461019457610b2280380380610019816101ac565b92833981019060408183031261019457610032816101d1565b602082015190916001600160401b03821161019457019180601f84011215610194578251926001600160401b038411610198578360051b906020806100788185016101ac565b80978152019282010192831161019457602001905b82821061017c5750505060015f5533156101695760018054336001600160a01b0319821681179092556001600160a01b03167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e05f80a35f6002819055338152600660205260408120805460ff19166001179055600380546001600160a01b0319166001600160a01b0393909316929092179091555b815181101561015a57600190818060a01b0360208260051b85010151165f52600660205260405f208260ff1982541617905501610122565b60405161093c90816101e68239f35b631e4fbdf760e01b5f525f60045260245ffd5b60208091610189846101d1565b81520191019061008d565b5f80fd5b634e487b7160e01b5f52604160045260245ffd5b6040519190601f01601f191682016001600160401b0381118382101761019857604052565b51906001600160a01b03821682036101945756fe6080806040526004361015610012575f80fd5b5f3560e01c90816315dae71c1461079b575080631c9024d3146106d757806324d7806c1461069a5780635513bcfe146103a85780636b1426a4146102f0578063715018a6146102955780638da5cb5b1461026d578063da7620a3146101095763f2fde38b1461007f575f80fd5b34610105576020366003190112610105576100986107b5565b6100a061087c565b6001600160a01b031680156100f257600180546001600160a01b0319811683179091556001600160a01b03167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e05f80a3005b631e4fbdf760e01b5f525f60045260245ffd5b5f80fd5b346101055760203660031901126101055760043561012561085e565b801561025e57331561024f576003546040516323b872dd60e01b602082015233602482015230604482015260648082018490528152610177916001600160a01b0316610172608483610818565b6108a3565b600254906001820180921161023b5781602092600255600360405161019b816107fc565b82815284810133815260408201908582526060830194600186525f526004875260405f2092518355600183019060018060a01b039051166bffffffffffffffffffffffff60a01b825416179055516002820155019051151560ff8019835416911617905560025490604051908152817f5d8b008b43b2e2e7fea50bede538c051b4d690ce6ac95790c864e3d81c636fbe843393a360015f55604051908152f35b634e487b7160e01b5f52601160045260245ffd5b63b0cadf0760e01b5f5260045ffd5b6357971f1d60e01b5f5260045ffd5b34610105575f366003190112610105576001546040516001600160a01b039091168152602090f35b34610105575f366003190112610105576102ad61087c565b600180546001600160a01b031981169091555f906001600160a01b03167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e08280a3005b34610105576020366003190112610105576004355f52600560205260405f20604051806020835491828152019081935f5260205f20905f5b818110610389575050508161033e910382610818565b604051918291602083019060208452518091526040830191905f5b818110610367575050500390f35b82516001600160a01b0316845285945060209384019390920191600101610359565b82546001600160a01b0316845260209093019260019283019201610328565b346101055760603660031901126101055760043560243567ffffffffffffffff8111610105576103dc9036906004016107cb565b9060443567ffffffffffffffff8111610105576103fd9036906004016107cb565b9061040661085e565b83158015610692575b6106835781840361067557845f52600460205260405f2091604051610433816107fc565b835480825260018501546001600160a01b0316602083015260028501546040830190815260039095015460ff16151560609092019182521561024f57511561066657335f52600660205260ff60405f20541615610657575f925f5b8281106106385750518311610629575f868152600460205260408120600301805460ff191690555b85811061053c5750505060405192806040850160408652526060840192905f905b80821061051257867f9fb24ebd5544779d3767bbc63a8dc99755551da4fc78af9735b463bb176c17a28780888860208301520390a260015f55005b90919384359060018060a01b038216809203610105576020816001938293520195019201906104d7565b865f52600560205260405f209061055c61055782898961083a565b61084a565b8254680100000000000000008110156106155760018101808555811015610601575f93845260209093209290920180546001600160a01b0319166001600160a01b039384161790556003546001926105fb91166105bd610557848b8b61083a565b906105c984878961083a565b356040519263a9059cbb60e01b6020850152868060a01b03166024840152604483015260448252610172606483610818565b016104b6565b634e487b7160e01b5f52603260045260245ffd5b634e487b7160e01b5f52604160045260245ffd5b634dd23c8b60e01b5f5260045ffd5b9361064485848661083a565b35810180911161023b579360010161048e565b634c60237960e01b5f5260045ffd5b639419f98f60e01b5f5260045ffd5b626f491760e91b5f5260045ffd5b6305568ffd60e31b5f5260045ffd5b50811561040f565b34610105576020366003190112610105576001600160a01b036106bb6107b5565b165f526006602052602060ff60405f2054166040519015158152f35b34610105576020366003190112610105575f60606040516106f7816107fc565b82815282602082015282604082015201526004355f52600460205260405f20604051610722816107fc565b815480825260018301546001600160a01b03166020830190815260028401546040840190815260039094015460ff16151560608401908152909390911561078c576080936040519351845260018060a01b0390511660208401525160408301525115156060820152f35b6311d6c75b60e31b5f5260045ffd5b34610105575f366003190112610105576020906002548152f35b600435906001600160a01b038216820361010557565b9181601f840112156101055782359167ffffffffffffffff8311610105576020808501948460051b01011161010557565b6080810190811067ffffffffffffffff82111761061557604052565b90601f8019910116810190811067ffffffffffffffff82111761061557604052565b91908110156106015760051b0190565b356001600160a01b03811681036101055790565b60025f541461086d5760025f55565b633ee5aeb560e01b5f5260045ffd5b6001546001600160a01b0316330361089057565b63118cdaa760e01b5f523360045260245ffd5b905f602091828151910182855af1156108fb575f513d6108f257506001600160a01b0381163b155b6108d25750565b635274afe760e01b5f9081526001600160a01b0391909116600452602490fd5b600114156108cb565b6040513d5f823e3d90fdfea2646970667358221220161d1954047f9f5afccbc784039692afafc9ee721d0f1526e74b83a8185c15dd64736f6c634300081c0033",
+    "sourceMap": "302:5145:36:-:0;;;;;;;;;;;;;;:::i;:::-;;;;;;;;;;;;;;;;;:::i;:::-;;;;;;;-1:-1:-1;;;;;302:5145:36;;;;;;;;;;;;;;;;;-1:-1:-1;;;;;302:5145:36;;;;;;;;;;;;;;;:::i;:::-;;;;;;;;;;;;;;;;;;;;;;;;;;;1857:1:31;-1:-1:-1;302:5145:36;1509:10;1273:26:21;1269:95;;1857:1:31;302:5145:36;;1509:10;-1:-1:-1;;;;;;302:5145:36;;;;;;;-1:-1:-1;;;;;302:5145:36;3052:40:21;-1:-1:-1;;3052:40:21;-1:-1:-1;421:1:36;302:5145;;;1509:10;302:5145;;1531:10;302:5145;;;;;;;-1:-1:-1;;302:5145:36;1857:1:31;302:5145:36;;;1570:33;302:5145;;-1:-1:-1;;;;;;302:5145:36;-1:-1:-1;;;;;302:5145:36;;;;;;;;;;;1654:3;302:5145;;1634:18;;;;;1857:1:31;302:5145:36;;;;;;;;;;;;;;;-1:-1:-1;302:5145:36;1531:10;302:5145;;;-1:-1:-1;302:5145:36;;;;;;;;;;;1619:13;;1634:18;302:5145;;;;;;;;;1269:95:21;1322:31;;;-1:-1:-1;1322:31:21;-1:-1:-1;1322:31:21;302:5145:36;;-1:-1:-1;1322:31:21;302:5145:36;;;;;;;:::i;:::-;;;;;;;;;;-1:-1:-1;302:5145:36;;;;;;-1:-1:-1;302:5145:36;;;;;-1:-1:-1;302:5145:36;;;;;;;;-1:-1:-1;;302:5145:36;;;-1:-1:-1;;;;;302:5145:36;;;;;;;;;;:::o;:::-;;;-1:-1:-1;;;;;302:5145:36;;;;;;:::o",
+    "linkReferences": {}
+  },
+  "deployedBytecode": {
+    "object": "0x6080806040526004361015610012575f80fd5b5f3560e01c90816315dae71c1461079b575080631c9024d3146106d757806324d7806c1461069a5780635513bcfe146103a85780636b1426a4146102f0578063715018a6146102955780638da5cb5b1461026d578063da7620a3146101095763f2fde38b1461007f575f80fd5b34610105576020366003190112610105576100986107b5565b6100a061087c565b6001600160a01b031680156100f257600180546001600160a01b0319811683179091556001600160a01b03167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e05f80a3005b631e4fbdf760e01b5f525f60045260245ffd5b5f80fd5b346101055760203660031901126101055760043561012561085e565b801561025e57331561024f576003546040516323b872dd60e01b602082015233602482015230604482015260648082018490528152610177916001600160a01b0316610172608483610818565b6108a3565b600254906001820180921161023b5781602092600255600360405161019b816107fc565b82815284810133815260408201908582526060830194600186525f526004875260405f2092518355600183019060018060a01b039051166bffffffffffffffffffffffff60a01b825416179055516002820155019051151560ff8019835416911617905560025490604051908152817f5d8b008b43b2e2e7fea50bede538c051b4d690ce6ac95790c864e3d81c636fbe843393a360015f55604051908152f35b634e487b7160e01b5f52601160045260245ffd5b63b0cadf0760e01b5f5260045ffd5b6357971f1d60e01b5f5260045ffd5b34610105575f366003190112610105576001546040516001600160a01b039091168152602090f35b34610105575f366003190112610105576102ad61087c565b600180546001600160a01b031981169091555f906001600160a01b03167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e08280a3005b34610105576020366003190112610105576004355f52600560205260405f20604051806020835491828152019081935f5260205f20905f5b818110610389575050508161033e910382610818565b604051918291602083019060208452518091526040830191905f5b818110610367575050500390f35b82516001600160a01b0316845285945060209384019390920191600101610359565b82546001600160a01b0316845260209093019260019283019201610328565b346101055760603660031901126101055760043560243567ffffffffffffffff8111610105576103dc9036906004016107cb565b9060443567ffffffffffffffff8111610105576103fd9036906004016107cb565b9061040661085e565b83158015610692575b6106835781840361067557845f52600460205260405f2091604051610433816107fc565b835480825260018501546001600160a01b0316602083015260028501546040830190815260039095015460ff16151560609092019182521561024f57511561066657335f52600660205260ff60405f20541615610657575f925f5b8281106106385750518311610629575f868152600460205260408120600301805460ff191690555b85811061053c5750505060405192806040850160408652526060840192905f905b80821061051257867f9fb24ebd5544779d3767bbc63a8dc99755551da4fc78af9735b463bb176c17a28780888860208301520390a260015f55005b90919384359060018060a01b038216809203610105576020816001938293520195019201906104d7565b865f52600560205260405f209061055c61055782898961083a565b61084a565b8254680100000000000000008110156106155760018101808555811015610601575f93845260209093209290920180546001600160a01b0319166001600160a01b039384161790556003546001926105fb91166105bd610557848b8b61083a565b906105c984878961083a565b356040519263a9059cbb60e01b6020850152868060a01b03166024840152604483015260448252610172606483610818565b016104b6565b634e487b7160e01b5f52603260045260245ffd5b634e487b7160e01b5f52604160045260245ffd5b634dd23c8b60e01b5f5260045ffd5b9361064485848661083a565b35810180911161023b579360010161048e565b634c60237960e01b5f5260045ffd5b639419f98f60e01b5f5260045ffd5b626f491760e91b5f5260045ffd5b6305568ffd60e31b5f5260045ffd5b50811561040f565b34610105576020366003190112610105576001600160a01b036106bb6107b5565b165f526006602052602060ff60405f2054166040519015158152f35b34610105576020366003190112610105575f60606040516106f7816107fc565b82815282602082015282604082015201526004355f52600460205260405f20604051610722816107fc565b815480825260018301546001600160a01b03166020830190815260028401546040840190815260039094015460ff16151560608401908152909390911561078c576080936040519351845260018060a01b0390511660208401525160408301525115156060820152f35b6311d6c75b60e31b5f5260045ffd5b34610105575f366003190112610105576020906002548152f35b600435906001600160a01b038216820361010557565b9181601f840112156101055782359167ffffffffffffffff8311610105576020808501948460051b01011161010557565b6080810190811067ffffffffffffffff82111761061557604052565b90601f8019910116810190811067ffffffffffffffff82111761061557604052565b91908110156106015760051b0190565b356001600160a01b03811681036101055790565b60025f541461086d5760025f55565b633ee5aeb560e01b5f5260045ffd5b6001546001600160a01b0316330361089057565b63118cdaa760e01b5f523360045260245ffd5b905f602091828151910182855af1156108fb575f513d6108f257506001600160a01b0381163b155b6108d25750565b635274afe760e01b5f9081526001600160a01b0391909116600452602490fd5b600114156108cb565b6040513d5f823e3d90fdfea2646970667358221220161d1954047f9f5afccbc784039692afafc9ee721d0f1526e74b83a8185c15dd64736f6c634300081c0033",
+    "sourceMap": "302:5145:36:-:0;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;;302:5145:36;;;;;;:::i;:::-;1500:62:21;;:::i;:::-;-1:-1:-1;;;;;302:5145:36;2627:22:21;;2623:91;;3004:6;302:5145:36;;-1:-1:-1;;;;;;302:5145:36;;;;;;;-1:-1:-1;;;;;302:5145:36;3052:40:21;-1:-1:-1;;3052:40:21;302:5145:36;2623:91:21;2672:31;;;302:5145:36;2672:31:21;302:5145:36;;;;;2672:31:21;302:5145:36;;;;;;;;;;-1:-1:-1;;302:5145:36;;;;;;2466:103:31;;:::i;:::-;2047:12:36;;2043:79;;2135:10;:24;2131:83;;2231:17;302:5145;;;-1:-1:-1;;;302:5145:36;1745:53:29;;;2135:10:36;1745:53:29;;;302:5145:36;2287:4;302:5145;;;;;;;;;;;1745:53:29;;;;-1:-1:-1;;;;;302:5145:36;1745:53:29;;302:5145:36;1745:53:29;:::i;:::-;;:::i;:::-;2313:22:36;302:5145;;;;;;;;;;;;;2313:22;302:5145;2231:17;302:5145;;;;;:::i;:::-;;;;2392:92;;;2135:10;302:5145;;;2392:92;;302:5145;;;;;2392:92;;302:5145;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;2313:22;302:5145;;;;;;;;;;;;;;;;;;;2313:22;302:5145;;;;;;;2135:10;2500:57;2135:10;;2500:57;;302:5145;;;;;;;;;;;;;;;;;;1745:53:29;302:5145:36;;2131:83;3481:21;;;302:5145;2182:21;302:5145;;2182:21;2043:79;2082:29;;;302:5145;2082:29;302:5145;;2082:29;302:5145;;;;;;-1:-1:-1;;302:5145:36;;;;;;;;-1:-1:-1;;;;;302:5145:36;;;;;;;;;;;;;;-1:-1:-1;;302:5145:36;;;;1500:62:21;;:::i;:::-;3004:6;302:5145:36;;-1:-1:-1;;;;;;302:5145:36;;;;;;;-1:-1:-1;;;;;302:5145:36;3052:40:21;302:5145:36;;3052:40:21;302:5145:36;;;;;;;-1:-1:-1;;302:5145:36;;;;;;;;5175:13;302:5145;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;:::i;:::-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;;;;;302:5145:36;;;;;-1:-1:-1;302:5145:36;;;;;;;;;;;;;;;;-1:-1:-1;;;;;302:5145:36;;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;;302:5145:36;;;;;;;;;;;;;;;;;;;;:::i;:::-;;;;;;;;;;;;;;;;:::i;:::-;2466:103:31;;;:::i;:::-;3145:18:36;;:47;;;;302:5145;3141:104;;3259:37;;;3255:99;;302:5145;;;;;;;;;;;;;;;:::i;:::-;;;;;;;;;;-1:-1:-1;;;;;302:5145:36;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;3437:21;3433:80;;302:5145;;3523:79;;3628:10;302:5145;;3617:10;302:5145;;;;;;;;3616:23;3612:93;;302:5145;3753:13;302:5145;3768:24;;;;;;302:5145;;3870:31;;3866:89;;302:5145;;;;;;;;;;;3965:36;302:5145;;-1:-1:-1;;302:5145:36;;;4040:17;;;;;;302:5145;;;;;;;;;;;;;;;;;;;;;;;;;;;;4231:54;302:5145;;;;;;;;4231:54;;;302:5145;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;4059:3;302:5145;;;4078:13;302:5145;;;;;4111:10;;;;;;;:::i;:::-;;:::i;:::-;302:5145;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;;;;;;302:5145:36;-1:-1:-1;;;;;302:5145:36;;;;;;;;;;1328:43:29;;302:5145:36;4175:10;;;;;;:::i;:::-;4187:17;;;;;;:::i;:::-;302:5145;;;;;;;;1328:43:29;;;302:5145:36;;;;;;;1328:43:29;;302:5145:36;;;;;;1328:43:29;;;;;;:::i;:::-;302:5145:36;4025:13;;302:5145;;;;;;;;;;;;;;;;;;;;;;;;3866:89;3924:20;;;302:5145;3924:20;302:5145;;3924:20;3794:3;3828:17;;;;;;:::i;:::-;302:5145;;;;;;;;3813:32;302:5145;;3753:13;;3612:93;3662:32;;;302:5145;3662:32;302:5145;;3662:32;3523:79;3570:21;;;302:5145;3570:21;302:5145;;3570:21;3255:99;3319:24;;;302:5145;3319:24;302:5145;;3319:24;3141:104;3215:19;;;302:5145;3215:19;302:5145;;3215:19;3145:47;3167:25;;;3145:47;;302:5145;;;;;;-1:-1:-1;;302:5145:36;;;;-1:-1:-1;;;;;302:5145:36;;:::i;:::-;;;;5418:10;302:5145;;;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;;302:5145:36;;;;;;;;;;;:::i;:::-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;:::i;:::-;;;;;;;;;;-1:-1:-1;;;;;302:5145:36;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;4615:21;4611:79;;302:5145;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;4611:79;4659:20;;;302:5145;4659:20;302:5145;;4659:20;302:5145;;;;;;-1:-1:-1;;302:5145:36;;;;;;4926:17;302:5145;;;;;;;;-1:-1:-1;;;;;302:5145:36;;;;;;:::o;:::-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;:::o;:::-;;;;;;;;;;;;;;;:::o;:::-;;;;;;;;;;;;;;;;;;;;;:::o;:::-;;;;;;;;;;;;:::o;:::-;;-1:-1:-1;;;;;302:5145:36;;;;;;;:::o;2575:307:31:-;1899:1;2702:7;302:5145:36;2702:18:31;2698:86;;1899:1;2702:7;302:5145:36;2575:307:31:o;2698:86::-;2743:30;;;2702:7;2743:30;;2702:7;2743:30;1796:162:21;302:5145:36;;-1:-1:-1;;;;;302:5145:36;735:10:30;1855:23:21;1851:101;;1796:162::o;1851:101::-;1901:40;;;-1:-1:-1;1901:40:21;735:10:30;1901:40:21;302:5145:36;;-1:-1:-1;1901:40:21;7686:720:29;;-1:-1:-1;7823:421:29;7686:720;7823:421;;;;;;;;;;;;-1:-1:-1;7823:421:29;;8258:15;;-1:-1:-1;;;;;;302:5145:36;;8276:26:29;:31;8258:68;8254:146;;7686:720;:::o;8254:146::-;-1:-1:-1;;;;8349:40:29;;;-1:-1:-1;;;;;302:5145:36;;;;8349:40:29;302:5145:36;;;8349:40:29;8258:68;8325:1;8310:16;;8258:68;;7823:421;;;;-1:-1:-1;7823:421:29;;;;",
+    "linkReferences": {}
+  },
+  "methodIdentifiers": {
+    "createRequest(uint256)": "da7620a3",
+    "getTotalYapRequests()": "15dae71c",
+    "getWinners(uint256)": "6b1426a4",
+    "getYapRequest(uint256)": "1c9024d3",
+    "isAdmin(address)": "24d7806c",
+    "owner()": "8da5cb5b",
+    "renounceOwnership()": "715018a6",
+    "rewardYapWinners(uint256,address[],uint256[])": "5513bcfe",
+    "transferOwnership(address)": "f2fde38b"
+  },
+  "rawMetadata": "{\"compiler\":{\"version\":\"0.8.28+commit.7893614a\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_kaitoAddress\",\"type\":\"address\"},{\"internalType\":\"address[]\",\"name\":\"_admins\",\"type\":\"address[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"BudgetMustBeGreaterThanZero\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"InsufficientBudget\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"InvalidERC20Address\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"InvalidWinnersProvided\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"InvalidYapRequestId\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"NativeTransferFailed\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"NoWinnersProvided\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"OnlyAdminsCanDistributeRewards\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"ReentrancyGuardReentrantCall\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"}],\"name\":\"SafeERC20FailedOperation\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"TokenTransferFailed\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"ValueMustBeGreaterThanZero\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"YapRequestNotActive\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"YapRequestNotFound\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"yapId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address[]\",\"name\":\"winners\",\"type\":\"address[]\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"rewardPerWinner\",\"type\":\"uint256\"}],\"name\":\"RewardsDistributed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"yapId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"creator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"budget\",\"type\":\"uint256\"}],\"name\":\"YapRequestCreated\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_budget\",\"type\":\"uint256\"}],\"name\":\"createRequest\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getTotalYapRequests\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"yapRequestId\",\"type\":\"uint256\"}],\"name\":\"getWinners\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"yapRequestId\",\"type\":\"uint256\"}],\"name\":\"getYapRequest\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"yapId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"creator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"budget\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"isActive\",\"type\":\"bool\"}],\"internalType\":\"struct Escrow.YapRequest\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_address\",\"type\":\"address\"}],\"name\":\"isAdmin\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"yapRequestId\",\"type\":\"uint256\"},{\"internalType\":\"address[]\",\"name\":\"winners\",\"type\":\"address[]\"},{\"internalType\":\"uint256[]\",\"name\":\"winnersRewards\",\"type\":\"uint256[]\"}],\"name\":\"rewardYapWinners\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"errors\":{\"OwnableInvalidOwner(address)\":[{\"details\":\"The owner is not a valid owner account. (eg. `address(0)`)\"}],\"OwnableUnauthorizedAccount(address)\":[{\"details\":\"The caller account is not authorized to perform an operation.\"}],\"ReentrancyGuardReentrantCall()\":[{\"details\":\"Unauthorized reentrant call.\"}],\"SafeERC20FailedOperation(address)\":[{\"details\":\"An operation with an ERC-20 token failed.\"}]},\"kind\":\"dev\",\"methods\":{\"createRequest(uint256)\":{\"details\":\"The budget must be greater than zero\",\"params\":{\"_budget\":\"The budget for the yap request\"},\"returns\":{\"_0\":\"The ID of the new yap request\"}},\"getTotalYapRequests()\":{\"returns\":{\"_0\":\"The total number of yap requests\"}},\"getWinners(uint256)\":{\"returns\":{\"_0\":\"Array of the winners of a yap requests\"}},\"getYapRequest(uint256)\":{\"params\":{\"yapRequestId\":\"The ID of the yap request\"},\"returns\":{\"_0\":\"The yap request details\"}},\"isAdmin(address)\":{\"returns\":{\"_0\":\"bool indicating if the address is an admin\"}},\"owner()\":{\"details\":\"Returns the address of the current owner.\"},\"renounceOwnership()\":{\"details\":\"Leaves the contract without owner. It will not be possible to call `onlyOwner` functions. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby disabling any functionality that is only available to the owner.\"},\"rewardYapWinners(uint256,address[],uint256[])\":{\"params\":{\"winners\":\"Array of winner addresses\",\"winnersRewards\":\"Array of corresponding reward amounts for each winner\",\"yapRequestId\":\"The ID of the yap request\"}},\"transferOwnership(address)\":{\"details\":\"Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner.\"}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"createRequest(uint256)\":{\"notice\":\"Creates a new yap request with specified a budget\"},\"getTotalYapRequests()\":{\"notice\":\"Gets the total number of yap requests\"},\"getWinners(uint256)\":{\"notice\":\"Gets the winners for yap requests\"},\"getYapRequest(uint256)\":{\"notice\":\"Gets a yap request by ID\"},\"isAdmin(address)\":{\"notice\":\"Checks if an address is an admin\"},\"rewardYapWinners(uint256,address[],uint256[])\":{\"notice\":\"Distributes rewards to winners of a yap request\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"src/Escrow.sol\":\"Escrow\"},\"evmVersion\":\"cancun\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[\":@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/\",\":@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/\",\":@uniswap/v2-core/=lib/v2-core/contracts/\",\":@uniswap/v2-periphery/=lib/v2-periphery/contracts/\",\":erc4626-tests/=lib/openzeppelin-contracts-upgradeable/lib/erc4626-tests/\",\":forge-std/=lib/forge-std/src/\",\":halmos-cheatcodes/=lib/openzeppelin-contracts-upgradeable/lib/halmos-cheatcodes/src/\",\":openzeppelin-contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/\",\":openzeppelin-contracts/=lib/openzeppelin-contracts/\",\":v2-core/=lib/v2-core/contracts/\",\":v2-periphery/=lib/v2-periphery/contracts/\"],\"viaIR\":true},\"sources\":{\"lib/openzeppelin-contracts/contracts/access/Ownable.sol\":{\"keccak256\":\"0xff6d0bb2e285473e5311d9d3caacb525ae3538a80758c10649a4d61029b017bb\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://8ed324d3920bb545059d66ab97d43e43ee85fd3bd52e03e401f020afb0b120f6\",\"dweb:/ipfs/QmfEckWLmZkDDcoWrkEvMWhms66xwTLff9DDhegYpvHo1a\"]},\"lib/openzeppelin-contracts/contracts/interfaces/IERC1363.sol\":{\"keccak256\":\"0x9b6b3e7803bc5f2f8cd7ad57db8ac1def61a9930a5a3107df4882e028a9605d7\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://da62d6be1f5c6edf577f0cb45666a8aa9c2086a4bac87d95d65f02e2f4c36a4b\",\"dweb:/ipfs/QmNkpvBpoCMvX8JwAFNSc5XxJ2q5BXJpL5L1txb4QkqVFF\"]},\"lib/openzeppelin-contracts/contracts/interfaces/IERC165.sol\":{\"keccak256\":\"0xde7e9fd9aee8d4f40772f96bb3b58836cbc6dfc0227014a061947f8821ea9724\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://11fea9f8bc98949ac6709f0c1699db7430d2948137aa94d5a9e95a91f61a710a\",\"dweb:/ipfs/QmQdfRXxQjwP6yn3DVo1GHPpriKNcFghSPi94Z1oKEFUNS\"]},\"lib/openzeppelin-contracts/contracts/interfaces/IERC20.sol\":{\"keccak256\":\"0xce41876e78d1badc0512229b4d14e4daf83bc1003d7f83978d18e0e56f965b9c\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://a2608291cb038b388d80b79a06b6118a42f7894ff67b7da10ec0dbbf5b2973ba\",\"dweb:/ipfs/QmWohqcBLbcxmA4eGPhZDXe5RYMMEEpFq22nfkaUMvTfw1\"]},\"lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol\":{\"keccak256\":\"0xe06a3f08a987af6ad2e1c1e774405d4fe08f1694b67517438b467cecf0da0ef7\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://df6f0c459663c9858b6cba2cda1d14a7d05a985bed6d2de72bd8e78c25ee79db\",\"dweb:/ipfs/QmeTTxZ7qVk9rjEv2R4CpCwdf8UMCcRqDNMvzNxHc3Fnn9\"]},\"lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol\":{\"keccak256\":\"0x4ea01544758fd2c7045961904686bfe232d2220a04ecaa2d6b08dac17827febf\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://fabe6bef5167ae741dd8c22d7f81d3f9120bd61b290762a2e8f176712567d329\",\"dweb:/ipfs/QmSnEitJ6xmf1SSAUeZozD7Gx7h8bNnX3a1ZBzqeivsvVg\"]},\"lib/openzeppelin-contracts/contracts/utils/Context.sol\":{\"keccak256\":\"0x493033a8d1b176a037b2cc6a04dad01a5c157722049bbecf632ca876224dd4b2\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://6a708e8a5bdb1011c2c381c9a5cfd8a9a956d7d0a9dc1bd8bcdaf52f76ef2f12\",\"dweb:/ipfs/Qmax9WHBnVsZP46ZxEMNRQpLQnrdE4dK8LehML1Py8FowF\"]},\"lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol\":{\"keccak256\":\"0x11a5a79827df29e915a12740caf62fe21ebe27c08c9ae3e09abe9ee3ba3866d3\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://3cf0c69ab827e3251db9ee6a50647d62c90ba580a4d7bbff21f2bea39e7b2f4a\",\"dweb:/ipfs/QmZiKwtKU1SBX4RGfQtY7PZfiapbbu6SZ9vizGQD9UHjRA\"]},\"lib/openzeppelin-contracts/contracts/utils/introspection/IERC165.sol\":{\"keccak256\":\"0x79796192ec90263f21b464d5bc90b777a525971d3de8232be80d9c4f9fb353b8\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://f6fda447a62815e8064f47eff0dd1cf58d9207ad69b5d32280f8d7ed1d1e4621\",\"dweb:/ipfs/QmfDRc7pxfaXB2Dh9np5Uf29Na3pQ7tafRS684wd3GLjVL\"]},\"src/Escrow.sol\":{\"keccak256\":\"0xfa8751cc3bd25149e24a4a9ef845fa8cb29490e7262e41816ea8a3bfe3096492\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://95894db978ab47f2576a7c89975b4f7f312ecada17f9e1a4f3b6e3ad6e4c09e2\",\"dweb:/ipfs/QmNqQbR9m2ySdLzjL9dXbi4EvdEsaywymVpXd7h4YfXhej\"]}},\"version\":1}",
+  "metadata": {
+    "compiler": { "version": "0.8.28+commit.7893614a" },
+    "language": "Solidity",
+    "output": {
+      "abi": [
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "_kaitoAddress",
+              "type": "address"
+            },
+            {
+              "internalType": "address[]",
+              "name": "_admins",
+              "type": "address[]"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "constructor"
+        },
+        {
+          "inputs": [],
+          "type": "error",
+          "name": "BudgetMustBeGreaterThanZero"
+        },
+        { "inputs": [], "type": "error", "name": "InsufficientBudget" },
+        { "inputs": [], "type": "error", "name": "InvalidERC20Address" },
+        { "inputs": [], "type": "error", "name": "InvalidWinnersProvided" },
+        { "inputs": [], "type": "error", "name": "InvalidYapRequestId" },
+        { "inputs": [], "type": "error", "name": "NativeTransferFailed" },
+        { "inputs": [], "type": "error", "name": "NoWinnersProvided" },
+        {
+          "inputs": [],
+          "type": "error",
+          "name": "OnlyAdminsCanDistributeRewards"
+        },
+        {
+          "inputs": [
+            { "internalType": "address", "name": "owner", "type": "address" }
+          ],
+          "type": "error",
+          "name": "OwnableInvalidOwner"
+        },
+        {
+          "inputs": [
+            { "internalType": "address", "name": "account", "type": "address" }
+          ],
+          "type": "error",
+          "name": "OwnableUnauthorizedAccount"
+        },
+        {
+          "inputs": [],
+          "type": "error",
+          "name": "ReentrancyGuardReentrantCall"
+        },
+        {
+          "inputs": [
+            { "internalType": "address", "name": "token", "type": "address" }
+          ],
+          "type": "error",
+          "name": "SafeERC20FailedOperation"
+        },
+        { "inputs": [], "type": "error", "name": "TokenTransferFailed" },
+        { "inputs": [], "type": "error", "name": "ValueMustBeGreaterThanZero" },
+        { "inputs": [], "type": "error", "name": "YapRequestNotActive" },
+        { "inputs": [], "type": "error", "name": "YapRequestNotFound" },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "previousOwner",
+              "type": "address",
+              "indexed": true
+            },
+            {
+              "internalType": "address",
+              "name": "newOwner",
+              "type": "address",
+              "indexed": true
+            }
+          ],
+          "type": "event",
+          "name": "OwnershipTransferred",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "yapId",
+              "type": "uint256",
+              "indexed": true
+            },
+            {
+              "internalType": "address[]",
+              "name": "winners",
+              "type": "address[]",
+              "indexed": false
+            },
+            {
+              "internalType": "uint256",
+              "name": "rewardPerWinner",
+              "type": "uint256",
+              "indexed": false
+            }
+          ],
+          "type": "event",
+          "name": "RewardsDistributed",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "yapId",
+              "type": "uint256",
+              "indexed": true
+            },
+            {
+              "internalType": "address",
+              "name": "creator",
+              "type": "address",
+              "indexed": true
+            },
+            {
+              "internalType": "uint256",
+              "name": "budget",
+              "type": "uint256",
+              "indexed": false
+            }
+          ],
+          "type": "event",
+          "name": "YapRequestCreated",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            { "internalType": "uint256", "name": "_budget", "type": "uint256" }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "createRequest",
+          "outputs": [
+            { "internalType": "uint256", "name": "", "type": "uint256" }
+          ]
+        },
+        {
+          "inputs": [],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "getTotalYapRequests",
+          "outputs": [
+            { "internalType": "uint256", "name": "", "type": "uint256" }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "yapRequestId",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "getWinners",
+          "outputs": [
+            { "internalType": "address[]", "name": "", "type": "address[]" }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "yapRequestId",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "getYapRequest",
+          "outputs": [
+            {
+              "internalType": "struct Escrow.YapRequest",
+              "name": "",
+              "type": "tuple",
+              "components": [
+                {
+                  "internalType": "uint256",
+                  "name": "yapId",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "address",
+                  "name": "creator",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "budget",
+                  "type": "uint256"
+                },
+                { "internalType": "bool", "name": "isActive", "type": "bool" }
+              ]
+            }
+          ]
+        },
+        {
+          "inputs": [
+            { "internalType": "address", "name": "_address", "type": "address" }
+          ],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "isAdmin",
+          "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }]
+        },
+        {
+          "inputs": [],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "owner",
+          "outputs": [
+            { "internalType": "address", "name": "", "type": "address" }
+          ]
+        },
+        {
+          "inputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "renounceOwnership"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "yapRequestId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address[]",
+              "name": "winners",
+              "type": "address[]"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "winnersRewards",
+              "type": "uint256[]"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "rewardYapWinners"
+        },
+        {
+          "inputs": [
+            { "internalType": "address", "name": "newOwner", "type": "address" }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "transferOwnership"
+        }
+      ],
+      "devdoc": {
+        "kind": "dev",
+        "methods": {
+          "createRequest(uint256)": {
+            "details": "The budget must be greater than zero",
+            "params": { "_budget": "The budget for the yap request" },
+            "returns": { "_0": "The ID of the new yap request" }
+          },
+          "getTotalYapRequests()": {
+            "returns": { "_0": "The total number of yap requests" }
+          },
+          "getWinners(uint256)": {
+            "returns": { "_0": "Array of the winners of a yap requests" }
+          },
+          "getYapRequest(uint256)": {
+            "params": { "yapRequestId": "The ID of the yap request" },
+            "returns": { "_0": "The yap request details" }
+          },
+          "isAdmin(address)": {
+            "returns": { "_0": "bool indicating if the address is an admin" }
+          },
+          "owner()": { "details": "Returns the address of the current owner." },
+          "renounceOwnership()": {
+            "details": "Leaves the contract without owner. It will not be possible to call `onlyOwner` functions. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby disabling any functionality that is only available to the owner."
+          },
+          "rewardYapWinners(uint256,address[],uint256[])": {
+            "params": {
+              "winners": "Array of winner addresses",
+              "winnersRewards": "Array of corresponding reward amounts for each winner",
+              "yapRequestId": "The ID of the yap request"
+            }
+          },
+          "transferOwnership(address)": {
+            "details": "Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner."
+          }
+        },
+        "version": 1
+      },
+      "userdoc": {
+        "kind": "user",
+        "methods": {
+          "createRequest(uint256)": {
+            "notice": "Creates a new yap request with specified a budget"
+          },
+          "getTotalYapRequests()": {
+            "notice": "Gets the total number of yap requests"
+          },
+          "getWinners(uint256)": {
+            "notice": "Gets the winners for yap requests"
+          },
+          "getYapRequest(uint256)": { "notice": "Gets a yap request by ID" },
+          "isAdmin(address)": { "notice": "Checks if an address is an admin" },
+          "rewardYapWinners(uint256,address[],uint256[])": {
+            "notice": "Distributes rewards to winners of a yap request"
+          }
+        },
+        "version": 1
+      }
+    },
+    "settings": {
+      "remappings": [
+        "@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/",
+        "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+        "@uniswap/v2-core/=lib/v2-core/contracts/",
+        "@uniswap/v2-periphery/=lib/v2-periphery/contracts/",
+        "erc4626-tests/=lib/openzeppelin-contracts-upgradeable/lib/erc4626-tests/",
+        "forge-std/=lib/forge-std/src/",
+        "halmos-cheatcodes/=lib/openzeppelin-contracts-upgradeable/lib/halmos-cheatcodes/src/",
+        "openzeppelin-contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/",
+        "openzeppelin-contracts/=lib/openzeppelin-contracts/",
+        "v2-core/=lib/v2-core/contracts/",
+        "v2-periphery/=lib/v2-periphery/contracts/"
+      ],
+      "optimizer": { "enabled": true, "runs": 200 },
+      "metadata": { "bytecodeHash": "ipfs" },
+      "compilationTarget": { "src/Escrow.sol": "Escrow" },
+      "evmVersion": "cancun",
+      "libraries": {},
+      "viaIR": true
+    },
+    "sources": {
+      "lib/openzeppelin-contracts/contracts/access/Ownable.sol": {
+        "keccak256": "0xff6d0bb2e285473e5311d9d3caacb525ae3538a80758c10649a4d61029b017bb",
+        "urls": [
+          "bzz-raw://8ed324d3920bb545059d66ab97d43e43ee85fd3bd52e03e401f020afb0b120f6",
+          "dweb:/ipfs/QmfEckWLmZkDDcoWrkEvMWhms66xwTLff9DDhegYpvHo1a"
+        ],
+        "license": "MIT"
+      },
+      "lib/openzeppelin-contracts/contracts/interfaces/IERC1363.sol": {
+        "keccak256": "0x9b6b3e7803bc5f2f8cd7ad57db8ac1def61a9930a5a3107df4882e028a9605d7",
+        "urls": [
+          "bzz-raw://da62d6be1f5c6edf577f0cb45666a8aa9c2086a4bac87d95d65f02e2f4c36a4b",
+          "dweb:/ipfs/QmNkpvBpoCMvX8JwAFNSc5XxJ2q5BXJpL5L1txb4QkqVFF"
+        ],
+        "license": "MIT"
+      },
+      "lib/openzeppelin-contracts/contracts/interfaces/IERC165.sol": {
+        "keccak256": "0xde7e9fd9aee8d4f40772f96bb3b58836cbc6dfc0227014a061947f8821ea9724",
+        "urls": [
+          "bzz-raw://11fea9f8bc98949ac6709f0c1699db7430d2948137aa94d5a9e95a91f61a710a",
+          "dweb:/ipfs/QmQdfRXxQjwP6yn3DVo1GHPpriKNcFghSPi94Z1oKEFUNS"
+        ],
+        "license": "MIT"
+      },
+      "lib/openzeppelin-contracts/contracts/interfaces/IERC20.sol": {
+        "keccak256": "0xce41876e78d1badc0512229b4d14e4daf83bc1003d7f83978d18e0e56f965b9c",
+        "urls": [
+          "bzz-raw://a2608291cb038b388d80b79a06b6118a42f7894ff67b7da10ec0dbbf5b2973ba",
+          "dweb:/ipfs/QmWohqcBLbcxmA4eGPhZDXe5RYMMEEpFq22nfkaUMvTfw1"
+        ],
+        "license": "MIT"
+      },
+      "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol": {
+        "keccak256": "0xe06a3f08a987af6ad2e1c1e774405d4fe08f1694b67517438b467cecf0da0ef7",
+        "urls": [
+          "bzz-raw://df6f0c459663c9858b6cba2cda1d14a7d05a985bed6d2de72bd8e78c25ee79db",
+          "dweb:/ipfs/QmeTTxZ7qVk9rjEv2R4CpCwdf8UMCcRqDNMvzNxHc3Fnn9"
+        ],
+        "license": "MIT"
+      },
+      "lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol": {
+        "keccak256": "0x4ea01544758fd2c7045961904686bfe232d2220a04ecaa2d6b08dac17827febf",
+        "urls": [
+          "bzz-raw://fabe6bef5167ae741dd8c22d7f81d3f9120bd61b290762a2e8f176712567d329",
+          "dweb:/ipfs/QmSnEitJ6xmf1SSAUeZozD7Gx7h8bNnX3a1ZBzqeivsvVg"
+        ],
+        "license": "MIT"
+      },
+      "lib/openzeppelin-contracts/contracts/utils/Context.sol": {
+        "keccak256": "0x493033a8d1b176a037b2cc6a04dad01a5c157722049bbecf632ca876224dd4b2",
+        "urls": [
+          "bzz-raw://6a708e8a5bdb1011c2c381c9a5cfd8a9a956d7d0a9dc1bd8bcdaf52f76ef2f12",
+          "dweb:/ipfs/Qmax9WHBnVsZP46ZxEMNRQpLQnrdE4dK8LehML1Py8FowF"
+        ],
+        "license": "MIT"
+      },
+      "lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol": {
+        "keccak256": "0x11a5a79827df29e915a12740caf62fe21ebe27c08c9ae3e09abe9ee3ba3866d3",
+        "urls": [
+          "bzz-raw://3cf0c69ab827e3251db9ee6a50647d62c90ba580a4d7bbff21f2bea39e7b2f4a",
+          "dweb:/ipfs/QmZiKwtKU1SBX4RGfQtY7PZfiapbbu6SZ9vizGQD9UHjRA"
+        ],
+        "license": "MIT"
+      },
+      "lib/openzeppelin-contracts/contracts/utils/introspection/IERC165.sol": {
+        "keccak256": "0x79796192ec90263f21b464d5bc90b777a525971d3de8232be80d9c4f9fb353b8",
+        "urls": [
+          "bzz-raw://f6fda447a62815e8064f47eff0dd1cf58d9207ad69b5d32280f8d7ed1d1e4621",
+          "dweb:/ipfs/QmfDRc7pxfaXB2Dh9np5Uf29Na3pQ7tafRS684wd3GLjVL"
+        ],
+        "license": "MIT"
+      },
+      "src/Escrow.sol": {
+        "keccak256": "0xfa8751cc3bd25149e24a4a9ef845fa8cb29490e7262e41816ea8a3bfe3096492",
+        "urls": [
+          "bzz-raw://95894db978ab47f2576a7c89975b4f7f312ecada17f9e1a4f3b6e3ad6e4c09e2",
+          "dweb:/ipfs/QmNqQbR9m2ySdLzjL9dXbi4EvdEsaywymVpXd7h4YfXhej"
+        ],
+        "license": "UNLICENSED"
+      }
+    },
+    "version": 1
+  },
+  "id": 36
+}
